@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fffdf8">
+  <meta name="description" content="Juegos didácticos, piñatería y detalles para celebrar. Explora el catálogo de ARTESOFT y arma tu pedido en minutos.">
+  <title>ARTESOFT — Ideas para jugar, crear y celebrar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <div class="announcement"><span class="announcement-spark">✳</span> Ideas para jugar, crear y celebrar <span class="announcement-divider">·</span> Envíos en Bogotá y alrededores</div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#inicio" data-route="store" aria-label="ARTESOFT, inicio">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+        <span class="brand-word">arte<span>soft</span><small>ARTE DIDÁCTICA</small></span>
+      </a>
+      <nav class="main-nav" aria-label="Navegación principal">
+        <a href="#inicio" data-route="store" class="nav-link is-active">Inicio</a>
+        <a href="#catalogo" data-route="store" data-scroll="catalogo" class="nav-link">Catálogo</a>
+        <a href="#pedidos" data-route="orders" class="nav-link">Mis pedidos</a>
+      </nav>
+      <div class="header-actions">
+        <label class="header-search" aria-label="Buscar productos">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 4.3 4.3"></path></svg>
+          <input id="headerSearch" type="search" placeholder="Buscar" autocomplete="off">
+          <kbd>/</kbd>
+        </label>
+        <button class="button button-secondary button-small customer-auth-button" type="button" data-action="open-customer-auth" data-auth-mode="login">Iniciar sesión</button>
+        <button class="button button-primary button-small customer-auth-button" type="button" data-action="open-customer-auth" data-auth-mode="register">Registrarse</button>
+        <button class="icon-button team-button" type="button" data-action="open-access" aria-label="Abrir acceso del equipo" title="Acceso del equipo">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"></circle><path d="M3.5 20v-1.4a5.5 5.5 0 0 1 11 0V20M16 5.2a3 3 0 0 1 0 5.7m1.5 3.1a4.7 4.7 0 0 1 3 4.5V20"></path></svg>
+        </button>
+        <button class="cart-button" type="button" data-action="open-cart" aria-label="Abrir carrito">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h8.3a2 2 0 0 0 1.9-1.4L21 8H6"></path><circle cx="9.5" cy="20" r="1.2"></circle><circle cx="18" cy="20" r="1.2"></circle></svg>
+          <span>Bolsa</span><span class="cart-count" id="cartCount" aria-live="polite">0</span>
+        </button>
+        <button class="mobile-menu-button" type="button" data-action="toggle-menu" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span></button>
+      </div>
+    </div>
+    <div class="mobile-menu" id="mobileMenu" hidden>
+      <a href="#inicio" data-route="store">Inicio</a><a href="#catalogo" data-route="store" data-scroll="catalogo">Catálogo</a><a href="#pedidos" data-route="orders">Mis pedidos</a><button type="button" data-action="open-customer-auth" data-auth-mode="login">Iniciar sesión</button><button type="button" data-action="open-customer-auth" data-auth-mode="register">Registrarse</button><button type="button" data-action="open-access">Espacio del equipo</button>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <div id="appRoot" aria-live="polite"></div>
+  </main>
+
+  <footer class="site-footer" id="siteFooter">
+    <div class="footer-main">
+      <div class="footer-brand">
+        <a class="brand brand-light" href="#inicio" data-route="store" aria-label="ARTESOFT, inicio">
+          <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+          <span class="brand-word">arte<span>soft</span><small>ARTE DIDÁCTICA</small></span>
+        </a>
+        <p>Pequeñas ideas, grandes momentos.<br>Juegos, arte y detalles para compartir.</p>
+      </div>
+      <div class="footer-column"><strong>Explora</strong><a href="#catalogo" data-route="store" data-scroll="catalogo">Catálogo</a><a href="#pedidos" data-route="orders">Mis pedidos</a><a href="#storyTitle" data-route="store" data-scroll="storyTitle">Conoce ARTESOFT</a></div>
+      <div class="footer-column"><strong>Tu compra</strong><span>Pago contra entrega</span><span>Disponibilidad visible</span><span>Atención cercana</span></div>
+      <div class="footer-note"><span class="footer-flower" aria-hidden="true">✳</span><strong>Un mundo para imaginar</strong><span>Productos para crear, aprender y celebrar.</span></div>
+    </div>
+    <div class="footer-bottom"><span>© 2026 Arte Didáctica S.A.S. · ARTESOFT</span><span>Prototipo académico · Bogotá, Colombia</span></div>
+  </footer>
+
+  <dialog class="drawer" id="cartDialog" aria-labelledby="cartTitle">
+    <div class="drawer-scrim" data-action="close-cart"></div>
+    <section class="drawer-panel">
+      <header class="drawer-header"><div><span class="eyebrow">TU SELECCIÓN</span><h2 id="cartTitle">Tu bolsa <span id="cartTitleCount"></span></h2></div><button class="icon-button" type="button" data-action="close-cart" aria-label="Cerrar bolsa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"></path></svg></button></header>
+      <div id="cartContents" class="drawer-content"></div>
+      <div id="checkoutContents" class="drawer-content" hidden></div>
+    </section>
+  </dialog>
+
+  <dialog class="modal-dialog access-dialog" id="accessDialog" aria-labelledby="accessTitle">
+    <form method="dialog" class="modal-close-row"><button class="icon-button" aria-label="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"></path></svg></button></form>
+    <div class="modal-icon">✳</div>
+    <span class="eyebrow">PORTAL DEL EQUIPO</span><h2 id="accessTitle">Entra al espacio de trabajo</h2>
+    <p class="modal-copy">Este prototipo usa perfiles de demostración. Elige un rol para explorar las pantallas y permisos.</p>
+    <form id="accessForm" class="form-stack">
+      <label for="demoRole">Perfil de demostración</label>
+      <select id="demoRole" name="role" required>
+        <option value="administrador">Administración · control total</option>
+        <option value="operador">Operación · pedidos e inventario</option>
+        <option value="consulta">Consulta · solo lectura</option>
+      </select>
+      <p class="form-hint">No se solicita ni se guarda una contraseña. El acceso real requiere autenticación en el backend.</p>
+      <button class="button button-primary button-wide" type="submit">Entrar al panel <span aria-hidden="true">→</span></button>
+    </form>
+  </dialog>
+
+  <dialog class="modal-dialog customer-auth-dialog" id="customerAuthDialog" aria-labelledby="customerAuthTitle">
+    <form method="dialog" class="modal-close-row"><button class="icon-button" aria-label="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"></path></svg></button></form>
+    <div class="modal-icon">♡</div>
+    <span class="eyebrow">CUENTA ARTESOFT</span>
+    <h2 id="customerAuthTitle">Inicia sesión</h2>
+    <p class="modal-copy" id="customerAuthCopy">Accede a tu cuenta para tener tu experiencia de compra a la mano.</p>
+    <div class="auth-mode-switch" role="group" aria-label="Tipo de acceso">
+      <button class="auth-mode-button is-active" type="button" data-action="customer-auth-mode" data-auth-mode="login" aria-pressed="true">Iniciar sesión</button>
+      <button class="auth-mode-button" type="button" data-action="customer-auth-mode" data-auth-mode="register" aria-pressed="false">Registrarse</button>
+    </div>
+    <form id="customerAuthForm" class="form-stack">
+      <div class="customer-name-field" hidden>
+        <label for="customerAuthName">Nombre completo</label>
+        <input id="customerAuthName" name="name" type="text" autocomplete="name" minlength="2">
+      </div>
+      <label for="customerAuthEmail">Correo electrónico</label>
+      <input id="customerAuthEmail" name="email" type="email" autocomplete="email" required>
+      <label for="customerAuthPassword">Contraseña</label>
+      <input id="customerAuthPassword" name="password" type="password" autocomplete="current-password" minlength="8" required>
+      <p class="form-hint" id="customerAuthNotice">Interfaz de demostración: el inicio de sesión requiere conectar un servicio de autenticación.</p>
+      <button class="button button-primary button-wide" id="customerAuthSubmit" type="submit">Iniciar sesión <span aria-hidden="true">→</span></button>
+    </form>
+  </dialog>
+
+  <dialog class="modal-dialog product-dialog" id="productDialog" aria-labelledby="productDialogTitle"></dialog>
+  <dialog class="modal-dialog confirm-dialog" id="confirmDialog" aria-labelledby="confirmTitle"></dialog>
+  <div class="toast-region" id="toastRegion" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <script defer src="js/core/storageService.js"></script>
+  <script defer src="js/core/helpers.js"></script>
+  <script defer src="js/core/permissions.js"></script>
+  <script defer src="js/services/demoData.js"></script>
+  <script defer src="js/auth/authModel.js"></script>
+  <script defer src="js/auth/authView.js"></script>
+  <script defer src="js/auth/authController.js"></script>
+  <script defer src="js/productos/productoModel.js"></script>
+  <script defer src="js/productos/productoView.js"></script>
+  <script defer src="js/productos/productoController.js"></script>
+  <script defer src="js/carrito/carritoModel.js"></script>
+  <script defer src="js/carrito/carritoView.js"></script>
+  <script defer src="js/carrito/carritoController.js"></script>
+  <script defer src="js/pedidos/pedidoModel.js"></script>
+  <script defer src="js/pedidos/pedidoView.js"></script>
+  <script defer src="js/pedidos/pedidoController.js"></script>
+  <script defer src="js/inventario/inventarioView.js"></script>
+  <script defer src="js/inventario/inventarioController.js"></script>
+  <script defer src="js/app.js"></script>
+</body>
+</html>
