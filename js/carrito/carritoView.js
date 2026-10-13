@@ -17,22 +17,26 @@
         <div class="cart-summary"><div class="summary-row"><span>Subtotal</span><strong>${H().money(totals.subtotal)}</strong></div><div class="summary-row"><span>Envío</span><strong>${totals.shipping === 0 ? "Gratis" : H().money(totals.shipping)}</strong></div><div class="summary-row summary-total"><span>Total estimado</span><strong>${H().money(totals.total)}</strong></div></div>
         <button class="button button-primary button-wide" type="button" data-action="start-checkout">Continuar con mis datos <span aria-hidden="true">→</span></button><p class="form-hint" style="text-align:center;margin-top:9px">Confirmas el pedido y pagas al recibirlo.</p>`;
     },
-    renderCheckout(lines, totals) {
+    renderCheckout(lines, totals, user = null) {
       const content = document.getElementById("cartContents");
       const checkout = document.getElementById("checkoutContents");
       if (!checkout) return;
       content.hidden = true;
       checkout.hidden = false;
+      const savedDetails = user?.role === "cliente" ? user : null;
+      const customerFields = savedDetails
+        ? `<div class="saved-delivery-details"><strong>Usaremos los datos de tu cuenta</strong><p>${H().escapeHTML(savedDetails.name)} · ${H().escapeHTML(savedDetails.email)}</p><p>${H().escapeHTML(savedDetails.phone)}</p><p>${H().escapeHTML(savedDetails.address)}, ${H().escapeHTML(savedDetails.city)}</p></div>`
+        : `<div class="form-field"><label for="checkoutName">Nombre completo</label><input id="checkoutName" name="name" autocomplete="name" required minlength="3" maxlength="90" placeholder="¿Cómo te llamas?"></div>
+          <div class="form-row"><div class="form-field"><label for="checkoutEmail">Correo electrónico</label><input id="checkoutEmail" name="email" type="email" autocomplete="email" required maxlength="120" placeholder="tu@correo.com"></div><div class="form-field"><label for="checkoutPhone">Celular</label><input id="checkoutPhone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required minlength="7" maxlength="20" pattern="[0-9+\\(\\) .\\-]{7,20}" placeholder="300 000 0000"></div></div>
+          <div class="form-row"><div class="form-field"><label for="checkoutCity">Ciudad o municipio</label><input id="checkoutCity" name="city" autocomplete="address-level2" required minlength="2" maxlength="60" value="Bogotá"></div><div class="form-field"><label for="checkoutAddress">Dirección de entrega</label><input id="checkoutAddress" name="address" autocomplete="street-address" required minlength="5" maxlength="120" placeholder="Calle, carrera, número"></div></div>`;
       checkout.innerHTML = `<div class="checkout-header"><button class="checkout-back" type="button" data-action="back-to-cart" aria-label="Volver a la bolsa">←</button><div><strong>Tus datos de entrega</strong><p class="step-caption">Un último paso y queda listo</p></div></div>
-        <form class="checkout-form" id="checkoutForm" novalidate>
-          <div class="form-field"><label for="checkoutName">Nombre completo</label><input id="checkoutName" name="name" autocomplete="name" required minlength="3" maxlength="90" placeholder="¿Cómo te llamas?"></div>
-          <div class="form-row"><div class="form-field"><label for="checkoutEmail">Correo electrónico</label><input id="checkoutEmail" name="email" type="email" autocomplete="email" required maxlength="120" placeholder="tu@correo.com"></div><div class="form-field"><label for="checkoutPhone">Celular</label><input id="checkoutPhone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required minlength="7" maxlength="20" pattern="[0-9+() .-]{7,20}" placeholder="300 000 0000"></div></div>
-          <div class="form-row"><div class="form-field"><label for="checkoutCity">Ciudad o municipio</label><input id="checkoutCity" name="city" autocomplete="address-level2" required minlength="2" maxlength="60" value="Bogotá"></div><div class="form-field"><label for="checkoutAddress">Dirección de entrega</label><input id="checkoutAddress" name="address" autocomplete="street-address" required minlength="5" maxlength="120" placeholder="Calle, carrera, número"></div></div>
+        <form class="checkout-form" id="checkoutForm" novalidate data-saved-customer="${savedDetails ? "true" : "false"}">
+          ${customerFields}
           <div class="form-field"><label for="checkoutNotes">Indicaciones para la entrega <span class="form-hint">Opcional</span></label><textarea id="checkoutNotes" name="notes" maxlength="220" placeholder="Apartamento, barrio o una referencia"></textarea></div>
           <div class="form-field"><label for="checkoutPayment">Forma de pago</label><select id="checkoutPayment" name="payment" required><option>Pago contra entrega</option></select></div>
           <div class="checkout-recap"><div class="summary-row"><span>${lines.reduce((n, line) => n + line.quantity, 0)} productos</span><strong>${H().money(totals.subtotal)}</strong></div><div class="summary-row"><span>Envío</span><strong>${totals.shipping ? H().money(totals.shipping) : "Gratis"}</strong></div><div class="summary-row summary-total"><span>Total a pagar</span><strong>${H().money(totals.total)}</strong></div></div>
           <button class="button button-primary button-wide" type="submit">Confirmar mi pedido <span aria-hidden="true">→</span></button>
-          <p class="form-hint">Tus datos se guardan en este navegador como parte de este prototipo.</p>
+          <p class="form-hint">${savedDetails ? "Se usarán los datos de entrega guardados en tu cuenta." : "Tus datos se guardan en este navegador como parte de este prototipo."}</p>
         </form>`;
     },
     renderSuccess(order) {

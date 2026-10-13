@@ -4,7 +4,7 @@
     operador: ["productos.ver", "productos.editar", "pedidos.ver", "pedidos.editar", "clientes.ver"],
     consulta: ["productos.ver", "pedidos.ver", "clientes.ver"]
   };
-  const labels = { administrador: "Administración", operador: "Operación", consulta: "Consulta" };
+  const labels = { administrador: "Administración", operador: "Ventas / operación", consulta: "Consulta" };
   window.Artesoft = window.Artesoft || {};
   window.Artesoft.Permissions = {
     can(role, action) { return (rules[role] || []).includes(action); },

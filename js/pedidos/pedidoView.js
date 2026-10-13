@@ -14,12 +14,19 @@
     return `<article class="order-card"><div class="order-card-head"><div><strong>${H().escapeHTML(order.id)}</strong><small>${H().date(order.createdAt)} · ${order.items.reduce((sum, item) => sum + Number(item.quantity), 0)} productos</small></div>${statusPill(order.status)}</div><div class="order-card-body"><div class="order-items-text">${itemText}<br><span class="form-hint">${H().escapeHTML(order.payment || "Pago contra entrega")}</span></div><div class="order-total"><small>Total del pedido</small><strong>${H().money(order.total)}</strong></div></div>${progress(order.status)}</article>`;
   }
   const view = {
-    renderCustomerPage(email = "", orders = null) {
+    renderCustomerPage(email = "", orders = null, isCustomerAccount = false) {
       let results = "";
-      if (orders) results = orders.length ? `<div class="orders-list">${orders.map(orderCard).join("")}</div>` : `<div class="empty-state" style="max-width:740px;margin-top:18px"><strong>Aún no encontramos pedidos con ese correo</strong>Revisa que sea el mismo que escribiste al confirmar tu compra.</div>`;
-      return `<div class="page-wrap orders-page"><div class="page-heading"><div><span class="eyebrow">Tu compra, siempre a la mano</span><h1 class="page-title">Mis pedidos</h1><p class="page-description">Consulta el estado de tu compra y revisa qué viene en camino. Usa el mismo correo que registraste al hacer el pedido.</p></div><span class="status-pill status-enviado">Seguimiento sencillo</span></div>
-        <form class="order-search-card" id="orderLookup"><div class="form-field"><label for="orderEmail">Correo electrónico de tu compra</label><input id="orderEmail" name="email" type="email" required maxlength="120" autocomplete="email" value="${H().escapeHTML(email)}" placeholder="tu@correo.com"></div><button class="button button-primary" type="submit">Buscar pedidos <span aria-hidden="true">→</span></button></form>
-        <p class="privacy-note">El historial de este prototipo se consulta con el correo del pedido y solo está guardado en este navegador. Dato de ejemplo para explorar: <strong>laura@example.com</strong>.</p>${results || ""}</div>`;
+      if (orders) {
+        results = orders.length
+          ? `<div class="orders-list">${orders.map(orderCard).join("")}</div>`
+          : `<div class="empty-state" style="max-width:740px;margin-top:18px"><strong>${isCustomerAccount ? "Aún no tienes pedidos" : "Aún no encontramos pedidos con ese correo"}</strong>${isCustomerAccount ? "Cuando confirmes una compra desde tu cuenta, aparecerá aquí." : "Revisa que sea el mismo que escribiste al confirmar tu compra."}</div>`;
+      }
+      const lookupForm = isCustomerAccount
+        ? `<p class="privacy-note">Mostrando únicamente los pedidos de <strong>${H().escapeHTML(email)}</strong>.</p>`
+        : `<form class="order-search-card" id="orderLookup"><div class="form-field"><label for="orderEmail">Correo electrónico de tu compra</label><input id="orderEmail" name="email" type="email" required maxlength="120" autocomplete="email" value="${H().escapeHTML(email)}" placeholder="tu@correo.com"></div><button class="button button-primary" type="submit">Buscar pedidos <span aria-hidden="true">→</span></button></form>
+        <p class="privacy-note">El historial de este prototipo se consulta con el correo del pedido y solo está guardado en este navegador. Dato de ejemplo para explorar: <strong>laura@example.com</strong>.</p>`;
+      return `<div class="page-wrap orders-page"><div class="page-heading"><div><span class="eyebrow">Tu compra, siempre a la mano</span><h1 class="page-title">Mis pedidos</h1><p class="page-description">${isCustomerAccount ? "Consulta el estado de tus compras realizadas con esta cuenta." : "Consulta el estado de tu compra y revisa qué viene en camino. Usa el mismo correo que registraste al hacer el pedido."}</p></div><span class="status-pill status-enviado">Seguimiento sencillo</span></div>
+        ${lookupForm}${results || ""}</div>`;
     },
     renderDashboard(orders, products, role) {
       const open = orders.filter((order) => order.status !== "Entregado").length;

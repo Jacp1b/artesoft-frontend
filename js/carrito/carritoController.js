@@ -37,7 +37,8 @@
         if (action === "start-checkout") {
           const lines = model().list();
           if (!lines.length) return;
-          view().renderCheckout(lines, model().totals());
+          const user = window.Artesoft.AuthModel.getCurrentUser();
+          view().renderCheckout(lines, model().totals(), user);
           document.getElementById("checkoutName")?.focus();
         }
         if (action === "back-to-cart") view().renderCart(model().list(), model().totals());
@@ -52,14 +53,28 @@
         if (event.target.id !== "checkoutForm") return;
         event.preventDefault();
         const form = event.target;
-        const name = form.elements.name.value.trim();
-        const phone = form.elements.phone.value.trim();
-        const city = form.elements.city.value.trim();
-        const address = form.elements.address.value.trim();
-        if (name.length < 3 || phone.length < 7 || city.length < 2 || address.length < 5) {
-          window.Artesoft.Helpers.toast("Revisa el nombre, celular y dirección de entrega.", "error");
-          form.reportValidity();
-          return;
+        const user = window.Artesoft.AuthModel.getCurrentUser();
+        const savedCustomer = form.dataset.savedCustomer === "true" && user?.role === "cliente" ? user : null;
+        let customer;
+        if (savedCustomer) {
+          customer = {
+            name: savedCustomer.name,
+            email: savedCustomer.email,
+            phone: savedCustomer.phone,
+            city: savedCustomer.city,
+            address: savedCustomer.address
+          };
+        } else {
+          const name = form.elements.name.value.trim();
+          const phone = form.elements.phone.value.trim();
+          const city = form.elements.city.value.trim();
+          const address = form.elements.address.value.trim();
+          if (name.length < 3 || phone.length < 7 || city.length < 2 || address.length < 5) {
+            window.Artesoft.Helpers.toast("Revisa el nombre, celular y dirección de entrega.", "error");
+            form.reportValidity();
+            return;
+          }
+          customer = { name, email: form.elements.email.value.trim(), phone, city, address };
         }
         if (!form.checkValidity()) { form.reportValidity(); return; }
         const lines = model().list();
@@ -71,7 +86,7 @@
         }
         const totals = model().totals();
         const order = window.Artesoft.PedidoModel.create({
-          customer: { name, email: form.elements.email.value.trim(), phone, city, address, notes: form.elements.notes.value.trim() },
+          customer: { ...customer, notes: form.elements.notes.value.trim() },
           items: lines.map((line) => ({ productId: line.id, name: line.name, price: line.price, quantity: line.quantity })),
           subtotal: totals.subtotal, shipping: totals.shipping, total: totals.total, payment: "Pago contra entrega"
         });

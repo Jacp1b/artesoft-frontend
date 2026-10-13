@@ -1,11 +1,5 @@
 (function () {
   const view = {
-    open() {
-      const dialog = document.getElementById("accessDialog");
-      const role = window.Artesoft.AuthModel.getRole();
-      if (role) document.getElementById("demoRole").value = role;
-      if (!dialog.open) dialog.showModal();
-    },
     openCustomer(mode) {
       this.setCustomerMode(mode);
       const dialog = document.getElementById("customerAuthDialog");
@@ -14,27 +8,45 @@
     setCustomerMode(mode) {
       const isRegister = mode === "register";
       const nameField = document.querySelector(".customer-name-field");
+      const registrationFields = document.querySelector(".customer-registration-fields");
       const nameInput = document.getElementById("customerAuthName");
       const passwordInput = document.getElementById("customerAuthPassword");
+      const form = document.getElementById("customerAuthForm");
       document.getElementById("customerAuthTitle").textContent = isRegister ? "Crea tu cuenta" : "Inicia sesión";
       document.getElementById("customerAuthCopy").textContent = isRegister
-        ? "Regístrate para tener tu experiencia de compra a la mano."
+        ? "Registra tus datos de entrega una sola vez y agiliza tus próximas compras."
         : "Accede a tu cuenta para tener tu experiencia de compra a la mano.";
       document.getElementById("customerAuthNotice").textContent = isRegister
-        ? "Interfaz de demostración: el registro requiere conectar un servicio de autenticación."
-        : "Interfaz de demostración: el inicio de sesión requiere conectar un servicio de autenticación.";
+        ? "La cuenta se guarda solo en el almacenamiento local de este navegador."
+        : "Prueba: admin@artesoft.local, ventas@artesoft.local, consulta@artesoft.local o laura@example.com · contraseña: Demo1234!";
       document.getElementById("customerAuthSubmit").innerHTML = isRegister
         ? 'Crear cuenta <span aria-hidden="true">→</span>'
         : 'Iniciar sesión <span aria-hidden="true">→</span>';
       nameField.hidden = !isRegister;
       nameInput.required = isRegister;
       nameInput.autocomplete = isRegister ? "name" : "off";
+      registrationFields.hidden = !isRegister;
+      registrationFields.querySelectorAll("input").forEach((input) => { input.required = isRegister; });
       passwordInput.autocomplete = isRegister ? "new-password" : "current-password";
+      form.dataset.authMode = isRegister ? "register" : "login";
       document.querySelectorAll("[data-action='customer-auth-mode']").forEach((button) => {
         const active = button.dataset.authMode === mode;
         button.classList.toggle("is-active", active);
         button.setAttribute("aria-pressed", String(active));
       });
+    },
+    refreshHeader() {
+      const user = window.Artesoft.AuthModel.getCurrentUser();
+      const loginButtons = [document.getElementById("customerLoginButton"), document.getElementById("mobileCustomerLoginButton")];
+      const registerButtons = [document.getElementById("customerRegisterButton"), document.getElementById("mobileCustomerRegisterButton")];
+      loginButtons.forEach((button) => {
+        if (!button) return;
+        button.dataset.action = user ? "logout" : "open-customer-auth";
+        if (!user) button.dataset.authMode = "login";
+        button.textContent = user ? `Salir · ${user.name}` : "Iniciar sesión";
+        button.setAttribute("aria-label", user ? `Cerrar sesión de ${user.name}` : "Iniciar sesión");
+      });
+      registerButtons.forEach((button) => { if (button) button.hidden = Boolean(user); });
     }
   };
   window.Artesoft = window.Artesoft || {};
