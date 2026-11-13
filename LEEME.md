@@ -1,72 +1,52 @@
-# ARTESOFT · Prototipo front end
+# ARTESOFT · Tienda web PHP y MySQL
 
-Tienda web de demostración para Arte Didáctica S.A.S. Construida con HTML5, CSS3 y JavaScript sin dependencias de framework.
+Aplicación para Arte Didáctica S.A.S. Usa PHP para el backend y API REST, MySQL para usuarios, productos y pedidos, y JavaScript/CSS para la interfaz.
 
-## Abrir
+## Instalación
 
-Abre `index.html` en un navegador moderno. La interfaz carga una imagen editorial desde Unsplash y las fuentes DM Sans y Manrope desde Google Fonts; el resto de la interfaz y sus ilustraciones son locales.
+Requisitos: PHP 8.1 o superior con PDO MySQL y las extensiones `mbstring` y `json`; MySQL 8.0 o superior.
 
-## Flujos incluidos
+1. Importa `database.sql` en MySQL. Crea la base `artesoft`, sus tablas y una cuenta inicial de administración.
+2. Configura `ARTESOFT_DB_HOST`, `ARTESOFT_DB_NAME`, `ARTESOFT_DB_USER` y `ARTESOFT_DB_PASSWORD`, o modifica los valores predeterminados en `config/database.php`.
+3. En la carpeta del proyecto, ejecuta `php -S 127.0.0.1:8000`.
+4. Abre `http://127.0.0.1:8000/index.php`.
 
-- Catálogo con búsqueda, categorías y ordenamiento.
-- Bolsa con cantidades, control de existencias, envío estimado y totales.
-- Confirmación de pedidos con pago contra entrega, validación de datos y seguimiento por correo.
-- Panel de demostración con resumen, pedidos, clientes, inventario y cuentas del equipo.
-- Alta, edición y eliminación confirmada de productos según el rol.
-- Roles de demostración: administración, ventas/operación y consulta.
-- Inicio de sesión y registro de clientes con cuentas guardadas en el almacenamiento local.
-- Cuentas de prueba para administración, ventas/operación, consulta y clientes.
-- Creación de cuentas internas y asignación de perfiles de trabajo desde el panel de administración.
-- Checkout que reutiliza los datos de entrega de los clientes con sesión iniciada.
-- Persistencia local para catálogo, bolsa, pedidos, cuentas y sesión.
+El acceso inicial es `admin@artesoft.local` con contraseña temporal `Demo1234!`. Cambia la contraseña inmediatamente desde **Cuentas**. Publica el sitio detrás de HTTPS y configura credenciales de base de datos propias antes de usarlo fuera de desarrollo.
 
-## Productos e imágenes
+## API REST
 
-El catálogo inicial incluye una selección de 12 referencias de los catálogos enviados: juegos didácticos, piñatería y decoración para fiestas. Las fotos vienen de los PDF y los precios se conservaron como **precios mayoristas en COP**. Las cantidades disponibles y los pedidos precargados son datos de demostración y se deben reemplazar por el inventario real.
+La API recibe y devuelve JSON (excepto los reportes CSV). Las rutas usan `api/index.php?resource=...`; las operaciones que modifican datos requieren el encabezado `X-CSRF-Token` que entrega la página.
 
-Las fotos recortadas están en `assets/products/`. Para agregar o cambiar una imagen desde el panel:
+| Recurso | Métodos | Acceso |
+|---|---|---|
+| `auth/me` | GET | Público: devuelve el usuario de sesión y token CSRF |
+| `auth/login`, `auth/register`, `auth/logout` | POST | Login/registro públicos; logout requiere sesión |
+| `products`, `products&id={id}` | GET, POST, PUT, DELETE | Lectura pública; escritura requiere sesión; borrar solo administración |
+| `orders`, `orders&id={id}` | GET, POST, PUT | Pedidos propios para cliente/invitado; historial completo y cambios de estado para equipo |
+| `users`, `users&id={id}` | GET, POST, PUT, DELETE | Solo administración |
+| `reports/orders`, `reports/products` | GET | Usuarios autenticados del equipo; descarga CSV |
 
-1. Copia la foto a `assets/products/`.
-2. Inicia sesión con una cuenta del equipo, abre **Inventario**, crea o edita el producto y escribe una ruta como `assets/products/mi-producto.jpg` en **Foto del producto**.
-3. Guarda los cambios. La ruta se conserva en el navegador de demostración.
+Ejemplo de URL de consulta: `api/index.php?resource=products`. El método HTTP determina la operación; para PUT y DELETE el identificador va en el parámetro `id`. Los permisos se verifican en el servidor, no solo en la interfaz.
 
-El logotipo ARTESOFT todavía es un rótulo de texto hecho con HTML y CSS. Los catálogos traen marcas del proveedor, no un archivo independiente del logo ARTESOFT. Cuando tengas el logo en PNG o SVG, colócalo en `assets/` y reemplaza el bloque `.brand` del encabezado y del pie en `index.html`.
+## Funcionalidades
 
-## Arquitectura
+- Registro de clientes y login con `password_hash` / `password_verify`, cookies de sesión `HttpOnly` y `SameSite`, regeneración del identificador y protección CSRF.
+- CRUD de productos con validación de campos, permisos por rol y persistencia MySQL.
+- CRUD de usuarios para administración, contraseñas almacenadas como hash y protección contra eliminar o degradar la última cuenta administradora.
+- Pedidos con cálculo de precios y envío en el servidor, control transaccional de existencias y consulta privada para cada cliente.
+- Panel con resumen, inventario, pedidos, clientes y administración de cuentas.
+- Exportación de reportes de pedidos e inventario en CSV desde el panel.
+- Carrito local del navegador; los productos, pedidos, usuarios y cambios de inventario se guardan en la base de datos.
 
-Los módulos se organizan primero por funcionalidad y luego por MVC, siguiendo la guía ADSO:
+El catálogo y los pedidos de ejemplo se inicializan de forma segura en el servidor durante la primera visita; la API no acepta escrituras públicas de inicialización. Los datos de ejemplo no deben confundirse con ventas reales.
 
-```text
-js/
-├── auth/             repositorio local de usuarios y autenticación de demostración
-├── carrito/          Model, View y Controller de la bolsa
-├── core/             persistencia, permisos y utilidades
-├── inventario/       View y Controller del CRUD de productos
-├── pedidos/          Model y View de pedidos, clientes y estados
-├── productos/        Model, View y Controller del catálogo
-└── services/         datos de ejemplo
-```
+## Estructura
 
-`StorageService` centraliza el acceso a `localStorage`. Los datos usan claves versionadas (`artesoft:v1:` y `artesoft:v3:`). Las cuentas y la sesión se conservan en el navegador.
+- `index.php`: página inicial, inicialización de datos de ejemplo y token CSRF.
+- `config/demo-data.php`: catálogo y pedidos de demostración iniciales.
+- `api/index.php`: API REST, autenticación, permisos, operaciones de dominio y reportes.
+- `config/database.php`: conexión PDO.
+- `database.sql`: base, tablas y cuenta inicial.
+- `js/`: componentes de interfaz y clientes de API.
 
-## Acceso al panel
-
-Inicia sesión desde el encabezado con una de estas cuentas de prueba (contraseña para todas: `Demo1234!`):
-
-| Perfil | Correo |
-|---|---|
-| Administración | `admin@artesoft.local` |
-| Ventas / operación | `ventas@artesoft.local` |
-| Consulta | `consulta@artesoft.local` |
-| Cliente | `laura@example.com` |
-
-- **Administración:** crea, edita y elimina productos; actualiza pedidos.
-- **Ventas / operación:** edita existencias y actualiza pedidos.
-- **Consulta:** revisa productos, pedidos y clientes.
-- **Cuentas:** solo administración puede crear cuentas internas y asignar los perfiles de administración, ventas/operación o consulta.
-
-El registro público siempre crea una cuenta de cliente e incluye sus datos de entrega. Al confirmar una compra con sesión iniciada, esos datos se reutilizan y no se solicitan de nuevo. El historial de pedidos se consulta desde **Mis pedidos** con el correo del pedido; el correo de ejemplo para revisar pedidos precargados es `laura@example.com`.
-
-## Límites de esta entrega
-
-Los precios de los productos del catálogo corresponden a los valores mayoristas que aparecen en los PDF. Las existencias y los pedidos de ejemplo son ilustrativos. `localStorage` guarda los cambios solo en el navegador actual: no sincroniza dispositivos ni reemplaza una base de datos. La autenticación y el control de roles son únicamente demostrativos: las contraseñas se guardan localmente en texto y no deben ser reales; no hay un backend que proteja los datos. Este prototipo no implementa una pasarela de pagos ni facturación electrónica. No ingreses datos reales de clientes.
+El sistema no integra pasarelas de pago ni facturación electrónica. La cuenta de administración inicial tiene una contraseña temporal conocida; cámbiala antes de desplegar.

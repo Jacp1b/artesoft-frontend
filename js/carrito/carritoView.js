@@ -36,7 +36,7 @@
           <div class="form-field"><label for="checkoutPayment">Forma de pago</label><select id="checkoutPayment" name="payment" required><option>Pago contra entrega</option></select></div>
           <div class="checkout-recap"><div class="summary-row"><span>${lines.reduce((n, line) => n + line.quantity, 0)} productos</span><strong>${H().money(totals.subtotal)}</strong></div><div class="summary-row"><span>Envío</span><strong>${totals.shipping ? H().money(totals.shipping) : "Gratis"}</strong></div><div class="summary-row summary-total"><span>Total a pagar</span><strong>${H().money(totals.total)}</strong></div></div>
           <button class="button button-primary button-wide" type="submit">Confirmar mi pedido <span aria-hidden="true">→</span></button>
-          <p class="form-hint">${savedDetails ? "Se usarán los datos de entrega guardados en tu cuenta." : "Tus datos se guardan en este navegador como parte de este prototipo."}</p>
+          <p class="form-hint">${savedDetails ? "Se usarán los datos de entrega guardados en tu cuenta." : "Los datos se enviarán al servidor para registrar el pedido."}</p>
         </form>`;
     },
     renderSuccess(order) {

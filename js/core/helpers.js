@@ -11,6 +11,9 @@
     region.append(item);
     window.setTimeout(() => item.remove(), 3200);
   };
+  window.addEventListener("artesoft:storage-error", (event) => {
+    toast(event.detail?.message || "No se pudieron guardar los cambios.", "error");
+  });
   const statusClass = (status) => {
     const normal = String(status || "").toLowerCase();
     if (normal.includes("prepar")) return "status-preparacion";

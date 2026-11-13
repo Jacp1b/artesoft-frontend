@@ -1,44 +1,53 @@
 (function () {
-  const SESSION_KEY = "artesoft:v1:session";
-  const roles = ["administrador", "operador", "consulta"];
-  const storage = () => window.Artesoft.StorageService;
+  const roles = ["administrador", "operador", "consulta", "cliente"];
+  let currentUser = null;
   const repository = () => window.Artesoft.UserRepository;
   const model = {
-    initialize() {
-      repository().initialize();
-      sessionStorage.removeItem("artesoft:demo-session");
-    },
-    getCurrentUser() {
-      const session = storage().read(SESSION_KEY, null);
-      return session?.userId ? repository().findById(session.userId) : null;
-    },
-    getRole() { return this.getCurrentUser()?.role || ""; },
+    initialize() { currentUser = repository().initialize(); },
+    getCurrentUser() { return currentUser; },
+    getRole() { return currentUser?.role || ""; },
     login(email, password) {
-      const user = repository().findByEmail(email);
-      if (!user || user.password !== password) {
-        return { ok: false, message: "El correo o la contraseña no son correctos." };
-      }
-      if (!storage().write(SESSION_KEY, { userId: user.id, createdAt: Date.now() })) {
-        return { ok: false, message: "No se pudo iniciar la sesión en este navegador." };
-      }
-      return { ok: true, user };
+      const result = repository().login(email, password);
+      if (result.ok) currentUser = result.user;
+      return result;
     },
     registerCustomer(data) {
-      return repository().create({ ...data, role: "cliente", createdAt: new Date().toISOString() });
+      const result = repository().register({ ...data, role: "cliente" });
+      if (result.ok) currentUser = result.user;
+      return result;
     },
     createStaff(data) {
       if (this.getRole() !== "administrador") {
         return { ok: false, message: "Solo administración puede crear cuentas del equipo." };
       }
       if (!roles.includes(data.role)) {
-        return { ok: false, message: "Selecciona un perfil de trabajo válido." };
+        return { ok: false, message: "Selecciona un perfil válido." };
       }
-      return repository().create({ ...data, createdAt: new Date().toISOString() });
+      return repository().create(data);
     },
-    listStaff() { return repository().list().filter((user) => user.role !== "cliente"); },
+    updateStaff(id, data) {
+      if (this.getRole() !== "administrador") {
+        return { ok: false, message: "Solo administración puede editar cuentas del equipo." };
+      }
+      if (data.role !== "cliente" && !roles.includes(data.role)) {
+        return { ok: false, message: "Selecciona un perfil válido." };
+      }
+      const result = repository().update(id, data);
+      if (!result.ok) return result;
+      if (String(currentUser?.id) === String(id)) currentUser = result.data;
+      return { ok: true, user: result.data };
+    },
+    deleteStaff(id) {
+      if (this.getRole() !== "administrador") {
+        return { ok: false, message: "Solo administración puede eliminar cuentas." };
+      }
+      return repository().remove(id);
+    },
+    listStaff() { return repository().list(); },
     clear() {
-      storage().remove(SESSION_KEY);
-      sessionStorage.removeItem("artesoft:demo-session");
+      const result = repository().logout();
+      if (result.ok) currentUser = null;
+      return result;
     }
   };
   window.Artesoft = window.Artesoft || {};

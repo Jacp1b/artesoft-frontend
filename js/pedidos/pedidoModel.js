@@ -1,29 +1,26 @@
 (function () {
-  const KEY = "artesoft:v3:pedidos";
-  const storage = () => window.Artesoft.StorageService;
+  const api = () => window.Artesoft.Api;
   const model = {
     initialize() {
-      if (storage().read(KEY, null) === null) storage().write(KEY, JSON.parse(JSON.stringify(window.Artesoft.DemoData.orders)));
+      const response = api().request("orders");
+      if (response.status === 401) return [];
+      if (!response.ok) throw new Error(response.message);
+      return response.data;
     },
-    list() { return storage().read(KEY, []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); },
+    list() {
+      const response = api().request("orders");
+      return response.ok ? response.data.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) : [];
+    },
     create(data) {
-      const orders = storage().read(KEY, []);
-      const order = { ...data, id: `AT-${String(Date.now()).slice(-6)}`, status: "Pedido recibido", createdAt: new Date().toISOString(), demo: false };
-      orders.unshift(order);
-      storage().write(KEY, orders);
-      return order;
+      return api().request("orders", "POST", data);
     },
     updateStatus(id, status) {
-      const orders = storage().read(KEY, []);
-      const order = orders.find((item) => item.id === id);
-      if (!order) return false;
-      order.status = status;
-      storage().write(KEY, orders);
-      return true;
+      return api().request("orders", "PUT", { status }, id).ok;
     },
     forEmail(email) {
-      const normalized = email.trim().toLocaleLowerCase("es-CO");
-      return this.list().filter((order) => order.customer.email.toLocaleLowerCase("es-CO") === normalized);
+      const user = window.Artesoft.AuthModel.getCurrentUser();
+      if (user?.role === "cliente" && user.email.toLocaleLowerCase("es-CO") !== email.trim().toLocaleLowerCase("es-CO")) return [];
+      return this.list();
     },
     customers() {
       const map = new Map();

@@ -85,12 +85,16 @@
           return;
         }
         const totals = model().totals();
-        const order = window.Artesoft.PedidoModel.create({
+        const result = window.Artesoft.PedidoModel.create({
           customer: { ...customer, notes: form.elements.notes.value.trim() },
           items: lines.map((line) => ({ productId: line.id, name: line.name, price: line.price, quantity: line.quantity })),
           subtotal: totals.subtotal, shipping: totals.shipping, total: totals.total, payment: "Pago contra entrega"
         });
-        window.Artesoft.ProductoModel.reduceStock(order.items);
+        if (!result.ok) {
+          window.Artesoft.Helpers.toast(result.message, "error");
+          return;
+        }
+        const order = result.data;
         model().clear();
         this.lastCustomerEmail = order.customer.email;
         this.refreshCount();

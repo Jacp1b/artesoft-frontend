@@ -1,3 +1,93 @@
+<?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/config/database.php';
+
+ini_set('session.use_strict_mode', '1');
+ini_set('session.use_only_cookies', '1');
+session_set_cookie_params([
+    'httponly' => true,
+    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    'samesite' => 'Lax',
+    'path' => '/',
+]);
+session_start();
+if (!isset($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+header('Cache-Control: no-store');
+
+try {
+    $database = artesoft_database();
+    $keys = ['artesoft:v3:productos', 'artesoft:v3:pedidos', 'artesoft:v3:initialized'];
+    $readState = static function () use ($database, $keys): array {
+        $placeholders = implode(', ', array_fill(0, count($keys), '?'));
+        $statement = $database->prepare("SELECT state_key, payload FROM app_state WHERE state_key IN ({$placeholders})");
+        $statement->execute($keys);
+        $state = [];
+        foreach ($statement->fetchAll() as $row) {
+            $state[$row['state_key']] = json_decode($row['payload'], true, 512, JSON_THROW_ON_ERROR);
+        }
+        return $state;
+    };
+    $initialState = $readState();
+    if (($initialState['artesoft:v3:initialized'] ?? []) !== ['done']) {
+        $demoData = require __DIR__ . '/config/demo-data.php';
+        $productsKey = 'artesoft:v3:productos';
+        $ordersKey = 'artesoft:v3:pedidos';
+        $database->beginTransaction();
+        try {
+            $lockSuffix = $database->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite' ? '' : ' FOR UPDATE';
+            $lock = $database->prepare("SELECT state_key, payload FROM app_state WHERE state_key IN (?, ?, ?){$lockSuffix}");
+            $lock->execute([$productsKey, $ordersKey, 'artesoft:v3:initialized']);
+            $lockedState = [];
+            foreach ($lock->fetchAll() as $row) {
+                $lockedState[$row['state_key']] = json_decode($row['payload'], true, 512, JSON_THROW_ON_ERROR);
+            }
+            if (($lockedState['artesoft:v3:initialized'] ?? []) !== ['done']) {
+                $writeState = static function (string $key, array $value) use ($database): void {
+                    $payload = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+                    $sql = $database->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
+                        ? 'INSERT INTO app_state (state_key, payload) VALUES (:key, :payload) ON CONFLICT(state_key) DO UPDATE SET payload = excluded.payload'
+                        : 'INSERT INTO app_state (state_key, payload) VALUES (:key, :payload) ON DUPLICATE KEY UPDATE payload = VALUES(payload)';
+                    $statement = $database->prepare($sql);
+                    $statement->execute(['key' => $key, 'payload' => $payload]);
+                };
+                if (($lockedState[$productsKey] ?? []) === []) {
+                    $writeState($productsKey, $demoData['products']);
+                }
+                if (($lockedState[$ordersKey] ?? []) === []) {
+                    $writeState($ordersKey, $demoData['orders']);
+                }
+                $writeState('artesoft:v3:initialized', ['done']);
+            }
+            $database->commit();
+        } catch (Throwable $error) {
+            if ($database->inTransaction()) {
+                $database->rollBack();
+            }
+            throw $error;
+        }
+    }
+    $initialState = $readState();
+} catch (Throwable $error) {
+    error_log('ARTESOFT database bootstrap failed: ' . $error->getMessage());
+    http_response_code(500);
+    ?>
+    <!doctype html>
+    <html lang="es">
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ARTESOFT · Configuración requerida</title></head>
+    <body>
+      <main>
+        <h1>No se pudo conectar con la base de datos</h1>
+        <p>Importa <code>database.sql</code> en MySQL y revisa los datos de conexión en <code>config/database.php</code>.</p>
+      </main>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+?>
 <!doctype html>
 <html lang="es">
 <head>
@@ -8,7 +98,7 @@
   <title>ARTESOFT — Ideas para jugar, crear y celebrar</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -102,7 +192,7 @@
       </div>
       <label for="customerAuthPassword">Contraseña</label>
       <input id="customerAuthPassword" name="password" type="password" autocomplete="current-password" minlength="8" maxlength="128" required>
-      <p class="form-hint" id="customerAuthNotice">Prueba: admin@artesoft.local, ventas@artesoft.local, consulta@artesoft.local o laura@example.com · contraseña: Demo1234!</p>
+      <p class="form-hint" id="customerAuthNotice">Administración inicial: admin@artesoft.local · contraseña temporal: Demo1234! Cámbiala después del primer acceso.</p>
       <button class="button button-primary button-wide" id="customerAuthSubmit" type="submit">Iniciar sesión <span aria-hidden="true">→</span></button>
     </form>
   </dialog>
@@ -111,10 +201,14 @@
   <dialog class="modal-dialog confirm-dialog" id="confirmDialog" aria-labelledby="confirmTitle"></dialog>
   <div class="toast-region" id="toastRegion" role="status" aria-live="polite" aria-atomic="true"></div>
 
+  <script>
+    window.Artesoft = window.Artesoft || {};
+    window.Artesoft.initialState = <?= json_encode($initialState, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?>;
+  window.Artesoft.csrfToken = <?= json_encode($_SESSION['csrf_token'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?>;
+  </script>
   <script defer src="js/core/storageService.js"></script>
   <script defer src="js/core/helpers.js"></script>
   <script defer src="js/core/permissions.js"></script>
-  <script defer src="js/services/demoData.js"></script>
   <script defer src="js/auth/userRepository.js"></script>
   <script defer src="js/auth/authModel.js"></script>
   <script defer src="js/auth/authView.js"></script>

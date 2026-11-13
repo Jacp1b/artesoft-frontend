@@ -17,8 +17,8 @@
         ? "Registra tus datos de entrega una sola vez y agiliza tus próximas compras."
         : "Accede a tu cuenta para tener tu experiencia de compra a la mano.";
       document.getElementById("customerAuthNotice").textContent = isRegister
-        ? "La cuenta se guarda solo en el almacenamiento local de este navegador."
-        : "Prueba: admin@artesoft.local, ventas@artesoft.local, consulta@artesoft.local o laura@example.com · contraseña: Demo1234!";
+        ? "Tus datos se guardan de forma segura para que puedas consultar tus pedidos."
+        : "Administración inicial: admin@artesoft.local · contraseña temporal: Demo1234! Cámbiala después del primer acceso.";
       document.getElementById("customerAuthSubmit").innerHTML = isRegister
         ? 'Crear cuenta <span aria-hidden="true">→</span>'
         : 'Iniciar sesión <span aria-hidden="true">→</span>';

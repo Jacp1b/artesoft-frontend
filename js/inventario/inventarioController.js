@@ -36,7 +36,9 @@
           const product = window.Artesoft.ProductoModel.get(button.dataset.id);
           if (!product) return;
           if (!window.confirm(`¿Eliminar “${product.name}” del catálogo? Esta acción no se puede deshacer.`)) return;
-          window.Artesoft.ProductoModel.remove(product.id);
+          if (!window.Artesoft.ProductoModel.remove(product.id)) {
+            return window.Artesoft.Helpers.toast("No se pudo eliminar el producto. Verifica tus permisos e inténtalo de nuevo.", "error");
+          }
           window.Artesoft.Helpers.toast("Eliminamos el producto del catálogo.");
           window.Artesoft.App.renderAdmin();
         }
@@ -59,8 +61,10 @@
         if (data.name.length < 3 || data.name.length > 100) return window.Artesoft.Helpers.toast("El nombre debe tener entre 3 y 100 caracteres.", "error");
         if (window.Artesoft.ProductoModel.existsName(data.name, form.dataset.id)) return window.Artesoft.Helpers.toast("Ya existe un producto con ese nombre.", "error");
         if (!Number.isFinite(data.price) || data.price <= 0 || !Number.isInteger(data.stock) || data.stock < 0) return window.Artesoft.Helpers.toast("Revisa el precio y las unidades disponibles.", "error");
-        if (editing) window.Artesoft.ProductoModel.update(form.dataset.id, data);
-        else window.Artesoft.ProductoModel.create(data);
+        const saved = editing
+          ? window.Artesoft.ProductoModel.update(form.dataset.id, data)
+          : window.Artesoft.ProductoModel.create(data);
+        if (!saved) return window.Artesoft.Helpers.toast("No se pudo guardar el producto. Verifica tus permisos e inténtalo de nuevo.", "error");
         document.getElementById("productDialog")?.close();
         window.Artesoft.Helpers.toast(editing ? "Guardamos los cambios del producto." : "Agregamos el producto al catálogo.");
         search = "";
