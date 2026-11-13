@@ -16,7 +16,7 @@ El acceso inicial es `admin@artesoft.local` con contraseña temporal `Demo1234!`
 
 Las cuentas de prueba son `admin.prueba1@artesoft.local`, `admin.prueba2@artesoft.local`, `operador.prueba1@artesoft.local`, `operador.prueba2@artesoft.local`, `consulta.prueba1@artesoft.local`, `consulta.prueba2@artesoft.local`, `cliente.prueba1@artesoft.local` y `cliente.prueba2@artesoft.local`; todas usan temporalmente `Prueba2026!`. Elimina estas cuentas o cambia sus contraseñas antes de desplegar.
 
-La aplicación crea el catálogo y los pedidos de demostración en las tablas `products`, `orders` y `order_items` al iniciar por primera vez; estos no se consideran ventas. Para agregar ocho pedidos de prueba persistidos, etiquetados como prueba y atribuidos a los empleados de prueba, ejecuta `php config/seed-test-orders.php` después de abrir la aplicación al menos una vez. El script es idempotente y no modifica las existencias. Los pedidos de prueba se incluyen en las estadísticas para probar los reportes, pero el sistema los marca claramente y no representan ventas reales. Si actualizas una instalación previa, la API agrega automáticamente las columnas de atribución y clasificación de prueba.
+La aplicación crea el catálogo y los pedidos de demostración en las tablas `products`, `orders` y `order_items` al iniciar por primera vez; estos no se consideran ventas. Para agregar ocho pedidos de prueba persistidos, etiquetados como prueba y atribuidos a los empleados de prueba, en InfinityFree u otro host sin SSH, inicia sesión como administrador, abre `https://tu-dominio/seed-test-orders.php` y pulsa **Ejecutar seeder**. Primero abre la aplicación al menos una vez para inicializar la base de datos. Al terminar, elimina `seed-test-orders.php` del hosting. También puedes ejecutarlo por CLI con `php config/seed-test-orders.php`. El script es idempotente y no modifica las existencias. Los pedidos de prueba se incluyen en las estadísticas para probar los reportes, pero el sistema los marca claramente y no representan ventas reales. Si actualizas una instalación previa, la API agrega automáticamente las columnas de atribución y clasificación de prueba.
 
 ## API REST
 
@@ -54,6 +54,7 @@ El catálogo y los pedidos de ejemplo se inicializan de forma segura en el servi
 - `index.php`: página inicial, inicialización de datos de ejemplo y token CSRF.
 - `config/demo-data.php`: catálogo y pedidos de demostración iniciales.
 - `api/index.php`: API REST, autenticación, permisos, operaciones de dominio, migraciones y reportes.
+- `seed-test-orders.php`: herramienta temporal protegida para ejecutar el seeder desde un navegador.
 - `api/report_template.php`: plantilla del informe PDF descargable.
 - `config/database.php`: conexión PDO.
 - `database.sql`: base, tablas y cuenta inicial.
