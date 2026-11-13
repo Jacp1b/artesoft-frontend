@@ -1,7 +1,7 @@
 (function () {
   const state = { page: "store", adminTab: "overview", orderEmail: "", lookupOrders: null };
   const tabs = [
-    ["overview", "◫", "Resumen"], ["orders", "▣", "Pedidos"], ["inventory", "✳", "Inventario"], ["clients", "♡", "Clientes"], ["users", "♙", "Cuentas"]
+    ["overview", "◫", "Resumen"], ["orders", "▣", "Pedidos"], ["inventory", "✳", "Inventario"], ["reports", "▤", "Reportes"], ["clients", "♡", "Clientes"], ["users", "♙", "Cuentas"]
   ];
   function navButton([key, icon, label]) {
     return `<button class="admin-nav-button${state.adminTab === key ? " is-current" : ""}" type="button" data-action="admin-tab" data-tab="${key}"${state.adminTab === key ? ` aria-current="page"` : ""}><span class="admin-nav-icon" aria-hidden="true">${icon}</span>${label}</button>`;
@@ -14,6 +14,10 @@
     if (state.adminTab === "users") state.adminTab = "overview";
     if (state.adminTab === "orders") return window.Artesoft.PedidoView.renderAdminOrders(orders, role);
     if (state.adminTab === "inventory") return window.Artesoft.InventarioView.renderInventory(products, role, window.Artesoft.InventarioController.getSearch());
+    if (state.adminTab === "reports") {
+      const response = window.Artesoft.Api.request("reports/summary");
+      return window.Artesoft.PedidoView.renderReports(response.ok ? response.data : null, response.message);
+    }
     if (state.adminTab === "clients") return window.Artesoft.PedidoView.renderClients(window.Artesoft.PedidoModel.customers());
     return window.Artesoft.PedidoView.renderDashboard(orders, products, role);
   }

@@ -25,6 +25,11 @@
           document.getElementById("customerAuthForm").reset();
           window.Artesoft.AuthView.setCustomerMode(action.dataset.authMode);
         }
+        if (action?.dataset.action === "fill-test-login") {
+          document.getElementById("customerAuthEmail").value = action.dataset.testEmail;
+          document.getElementById("customerAuthPassword").value = "Prueba2026!";
+          document.getElementById("customerAuthPassword").focus();
+        }
         if (event.target.closest("[data-action='exit-admin']")) {
           const result = window.Artesoft.AuthModel.clear();
           if (!result.ok) return window.Artesoft.Helpers.toast(result.message, "error");

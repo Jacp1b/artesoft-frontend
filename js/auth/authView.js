@@ -9,6 +9,7 @@
       const isRegister = mode === "register";
       const nameField = document.querySelector(".customer-name-field");
       const registrationFields = document.querySelector(".customer-registration-fields");
+      const testLoginOptions = document.getElementById("testLoginOptions");
       const nameInput = document.getElementById("customerAuthName");
       const passwordInput = document.getElementById("customerAuthPassword");
       const form = document.getElementById("customerAuthForm");
@@ -26,6 +27,7 @@
       nameInput.required = isRegister;
       nameInput.autocomplete = isRegister ? "name" : "off";
       registrationFields.hidden = !isRegister;
+      testLoginOptions.hidden = isRegister;
       registrationFields.querySelectorAll("input").forEach((input) => { input.required = isRegister; });
       passwordInput.autocomplete = isRegister ? "new-password" : "current-password";
       form.dataset.authMode = isRegister ? "register" : "login";

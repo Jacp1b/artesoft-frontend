@@ -50,6 +50,36 @@ function database(): PDO
     return artesoft_database();
 }
 
+function ensure_report_schema(PDO $pdo): void
+{
+    $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+    if ($driver === 'sqlite') {
+        $columns = $pdo->query('PRAGMA table_info(orders)')->fetchAll();
+        $existing = [];
+        foreach ($columns as $column) {
+            $existing[$column['name']] = true;
+        }
+        if (!isset($existing['sold_by_user_id'])) {
+            $pdo->exec('ALTER TABLE orders ADD COLUMN sold_by_user_id INTEGER NULL REFERENCES users(id) ON DELETE SET NULL');
+        }
+        if (!isset($existing['is_test'])) {
+            $pdo->exec('ALTER TABLE orders ADD COLUMN is_test INTEGER NOT NULL DEFAULT 0');
+        }
+        $pdo->exec('CREATE INDEX IF NOT EXISTS orders_seller_index ON orders (sold_by_user_id)');
+        return;
+    }
+
+    $statement = $pdo->prepare('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
+    $statement->execute(['orders', 'sold_by_user_id']);
+    if ((int) $statement->fetchColumn() === 0) {
+        $pdo->exec('ALTER TABLE orders ADD COLUMN sold_by_user_id BIGINT UNSIGNED NULL, ADD KEY orders_seller_index (sold_by_user_id), ADD CONSTRAINT orders_seller_fk FOREIGN KEY (sold_by_user_id) REFERENCES users (id) ON DELETE SET NULL');
+    }
+    $statement->execute(['orders', 'is_test']);
+    if ((int) $statement->fetchColumn() === 0) {
+        $pdo->exec('ALTER TABLE orders ADD COLUMN is_test BOOLEAN NOT NULL DEFAULT FALSE');
+    }
+}
+
 function current_user(): ?array
 {
     static $loaded = false;
@@ -97,31 +127,200 @@ function public_user(array $user): array
     return $user;
 }
 
-function state_read(PDO $pdo, string $key, bool $lock = false): array
+function products_list(PDO $pdo): array
 {
-    $forUpdate = $lock && $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'sqlite' ? ' FOR UPDATE' : '';
-    $statement = $pdo->prepare('SELECT payload FROM app_state WHERE state_key = :state_key' . $forUpdate);
-    $statement->execute(['state_key' => $key]);
-    $payload = $statement->fetchColumn();
-    if ($payload === false) {
-        return [];
-    }
-    $value = json_decode((string) $payload, true, 512, JSON_THROW_ON_ERROR);
-    return is_array($value) ? $value : [];
+    $rows = $pdo->query('SELECT product_id, name, category, price, stock, description, badge, image, color, icon FROM products ORDER BY created_at, product_id')->fetchAll();
+    return array_map(static function (array $row): array {
+        return [
+            'id' => $row['product_id'], 'name' => $row['name'], 'category' => $row['category'],
+            'price' => (int) $row['price'], 'stock' => (int) $row['stock'], 'description' => $row['description'],
+            'badge' => $row['badge'], 'image' => $row['image'], 'color' => $row['color'], 'icon' => $row['icon'],
+        ];
+    }, $rows);
 }
 
-function state_write(PDO $pdo, string $key, array $value): void
+function find_product(PDO $pdo, string $id, bool $lock = false): ?array
 {
-    $payload = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-    if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
-        $sql = 'INSERT INTO app_state (state_key, payload) VALUES (:state_key, :payload)
-                ON CONFLICT(state_key) DO UPDATE SET payload = excluded.payload';
+    $suffix = $lock && $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'sqlite' ? ' FOR UPDATE' : '';
+    $statement = $pdo->prepare('SELECT product_id, name, category, price, stock, description, badge, image, color, icon FROM products WHERE product_id = :id' . $suffix);
+    $statement->execute(['id' => $id]);
+    $row = $statement->fetch();
+    if (!$row) {
+        return null;
+    }
+    return [
+        'id' => $row['product_id'], 'name' => $row['name'], 'category' => $row['category'],
+        'price' => (int) $row['price'], 'stock' => (int) $row['stock'], 'description' => $row['description'],
+        'badge' => $row['badge'], 'image' => $row['image'], 'color' => $row['color'], 'icon' => $row['icon'],
+    ];
+}
+
+function save_product(PDO $pdo, string $id, array $product, bool $insert): void
+{
+    if ($insert) {
+        $sql = 'INSERT INTO products (product_id, name, category, price, stock, description, badge, image, color, icon)
+                VALUES (:id, :name, :category, :price, :stock, :description, :badge, :image, :color, :icon)';
     } else {
-        $sql = 'INSERT INTO app_state (state_key, payload) VALUES (:state_key, :payload)
-                ON DUPLICATE KEY UPDATE payload = VALUES(payload)';
+        $sql = 'UPDATE products SET name = :name, category = :category, price = :price, stock = :stock,
+                description = :description, badge = :badge, image = :image, color = :color, icon = :icon
+                WHERE product_id = :id';
     }
     $statement = $pdo->prepare($sql);
-    $statement->execute(['state_key' => $key, 'payload' => $payload]);
+    $statement->execute([
+        'id' => $id, 'name' => $product['name'], 'category' => $product['category'],
+        'price' => $product['price'], 'stock' => $product['stock'], 'description' => $product['description'],
+        'badge' => $product['badge'], 'image' => $product['image'], 'color' => $product['color'], 'icon' => $product['icon'],
+    ]);
+}
+
+function order_items(PDO $pdo, string $orderId): array
+{
+    $statement = $pdo->prepare('SELECT product_id, product_name, unit_price, quantity FROM order_items WHERE order_id = :id ORDER BY id');
+    $statement->execute(['id' => $orderId]);
+    return array_map(static fn(array $item): array => [
+        'productId' => $item['product_id'], 'name' => $item['product_name'],
+        'price' => (int) $item['unit_price'], 'quantity' => (int) $item['quantity'],
+    ], $statement->fetchAll());
+}
+
+function order_record(PDO $pdo, array $row): array
+{
+    return [
+        'id' => $row['order_id'],
+        'customer' => [
+            'name' => $row['customer_name'], 'email' => $row['customer_email'], 'phone' => $row['customer_phone'],
+            'city' => $row['customer_city'], 'address' => $row['customer_address'], 'notes' => $row['customer_notes'],
+        ],
+        'items' => order_items($pdo, $row['order_id']),
+        'subtotal' => (int) $row['subtotal'], 'shipping' => (int) $row['shipping'], 'total' => (int) $row['total'],
+        'status' => $row['status'], 'payment' => $row['payment'],
+        'seller' => isset($row['seller_user_id']) && $row['seller_user_id'] !== null
+            ? ['id' => (int) $row['seller_user_id'], 'name' => (string) $row['seller_name']]
+            : null,
+        'createdAt' => date(DATE_ATOM, strtotime($row['created_at'])),
+        'demo' => (bool) $row['is_demo'],
+        'test' => (bool) ($row['is_test'] ?? false),
+    ];
+}
+
+function orders_list(PDO $pdo, ?array $user, ?string $guestToken, ?string $orderId = null): array
+{
+    $sql = 'SELECT o.*, u.id AS seller_user_id, u.name AS seller_name FROM orders o LEFT JOIN users u ON u.id = o.sold_by_user_id';
+    $conditions = [];
+    $params = [];
+    if ($user !== null && $user['role'] === 'cliente') {
+        $conditions[] = 'o.customer_user_id = :user_id';
+        $params['user_id'] = (int) $user['id'];
+    } elseif ($user === null) {
+        if ($guestToken === null || $guestToken === '') {
+            return [];
+        }
+        $conditions[] = 'o.guest_token_hash = :guest_token_hash';
+        $params['guest_token_hash'] = hash('sha256', $guestToken);
+    }
+    if ($orderId !== null) {
+        $conditions[] = 'o.order_id = :order_id';
+        $params['order_id'] = $orderId;
+    }
+    if ($conditions !== []) {
+        $sql .= ' WHERE ' . implode(' AND ', $conditions);
+    }
+    $sql .= ' ORDER BY o.created_at DESC';
+    $statement = $pdo->prepare($sql);
+    $statement->execute($params);
+    return array_map(static function (array $row) use ($pdo, $user): array {
+        $order = order_record($pdo, $row);
+        if ($user === null || $user['role'] === 'cliente') {
+            unset($order['seller']);
+        }
+        return $order;
+    }, $statement->fetchAll());
+}
+
+function insert_order(PDO $pdo, array $order, array $items, ?int $userId, ?string $guestToken, ?int $sellerUserId): void
+{
+    $statement = $pdo->prepare('INSERT INTO orders (order_id, customer_user_id, guest_token_hash, sold_by_user_id, customer_name, customer_email, customer_phone, customer_city, customer_address, customer_notes, subtotal, shipping, total, status, payment, is_demo, is_test, created_at)
+        VALUES (:id, :user_id, :guest_hash, :seller_id, :name, :email, :phone, :city, :address, :notes, :subtotal, :shipping, :total, :status, :payment, :is_demo, :is_test, :created_at)');
+    $createdAt = new DateTimeImmutable((string) ($order['createdAt'] ?? 'now'));
+    $statement->execute([
+        'id' => (string) $order['id'], 'user_id' => $userId,
+        'guest_hash' => $guestToken === null ? null : hash('sha256', $guestToken),
+        'seller_id' => $sellerUserId,
+        'name' => (string) ($order['customer']['name'] ?? ''), 'email' => (string) ($order['customer']['email'] ?? ''),
+        'phone' => (string) ($order['customer']['phone'] ?? ''), 'city' => (string) ($order['customer']['city'] ?? ''),
+        'address' => (string) ($order['customer']['address'] ?? ''), 'notes' => (string) ($order['customer']['notes'] ?? ''),
+        'subtotal' => (int) ($order['subtotal'] ?? 0), 'shipping' => (int) ($order['shipping'] ?? 0),
+        'total' => (int) ($order['total'] ?? 0), 'status' => (string) ($order['status'] ?? 'Pedido recibido'),
+        'payment' => (string) ($order['payment'] ?? 'Pago contra entrega'), 'is_demo' => !empty($order['demo']) ? 1 : 0,
+        'is_test' => !empty($order['test']) ? 1 : 0,
+        'created_at' => $createdAt->format('Y-m-d H:i:s'),
+    ]);
+    $itemStatement = $pdo->prepare('INSERT INTO order_items (order_id, product_id, product_name, unit_price, quantity) VALUES (:order_id, :product_id, :name, :price, :quantity)');
+    foreach ($items as $item) {
+        $itemStatement->execute([
+            'order_id' => (string) $order['id'], 'product_id' => $item['productId'] ?? null,
+            'name' => (string) ($item['name'] ?? ''), 'price' => (int) ($item['price'] ?? 0),
+            'quantity' => (int) ($item['quantity'] ?? 0),
+        ]);
+    }
+}
+
+function report_summary(PDO $pdo): array
+{
+    $startMonth = new DateTimeImmutable('first day of this month');
+    $startMonth = $startMonth->modify('-5 months');
+    $since = $startMonth->format('Y-m-01 00:00:00');
+    $monthExpression = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
+        ? "strftime('%Y-%m', created_at)"
+        : "DATE_FORMAT(created_at, '%Y-%m')";
+    $monthlyStatement = $pdo->prepare("SELECT {$monthExpression} AS month, COUNT(*) AS order_count, COALESCE(SUM(total), 0) AS sales FROM orders WHERE is_demo = 0 AND created_at >= :since GROUP BY month ORDER BY month");
+    $monthlyStatement->execute(['since' => $since]);
+    $monthlyRows = [];
+    foreach ($monthlyStatement->fetchAll() as $row) {
+        $monthlyRows[$row['month']] = ['month' => $row['month'], 'orders' => (int) $row['order_count'], 'sales' => (int) $row['sales']];
+    }
+
+    $monthlySales = [];
+    $monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    for ($offset = 0; $offset < 6; $offset++) {
+        $month = $startMonth->modify("+{$offset} months");
+        $key = $month->format('Y-m');
+        $monthlySales[] = ($monthlyRows[$key] ?? ['month' => $key, 'orders' => 0, 'sales' => 0]) + [
+            'label' => $monthNames[(int) $month->format('n') - 1] . ' ' . $month->format('y'),
+        ];
+    }
+
+    $sellerRows = $pdo->query("SELECT u.id, u.name, u.role,
+        COUNT(o.order_id) AS order_count,
+        COALESCE(SUM(o.total), 0) AS sales,
+        COUNT(CASE WHEN o.is_test = 1 THEN o.order_id END) AS test_order_count,
+        COALESCE(SUM(CASE WHEN o.is_test = 1 THEN o.total ELSE 0 END), 0) AS test_sales
+        FROM users u
+        LEFT JOIN orders o ON o.sold_by_user_id = u.id AND o.is_demo = 0
+        WHERE u.role IN ('administrador', 'operador')
+        GROUP BY u.id, u.name, u.role
+        ORDER BY sales DESC, order_count DESC, u.name
+        LIMIT 10")->fetchAll();
+
+    return [
+        'products' => (int) $pdo->query('SELECT COUNT(*) FROM products')->fetchColumn(),
+        'orders' => (int) $pdo->query('SELECT COUNT(*) FROM orders WHERE is_demo = 0')->fetchColumn(),
+        'sales' => (int) $pdo->query('SELECT COALESCE(SUM(total), 0) FROM orders WHERE is_demo = 0')->fetchColumn(),
+        'openOrders' => (int) $pdo->query("SELECT COUNT(*) FROM orders WHERE is_demo = 0 AND status <> 'Entregado'")->fetchColumn(),
+        'testOrders' => (int) $pdo->query('SELECT COUNT(*) FROM orders WHERE is_demo = 0 AND is_test = 1')->fetchColumn(),
+        'testSales' => (int) $pdo->query('SELECT COALESCE(SUM(total), 0) FROM orders WHERE is_demo = 0 AND is_test = 1')->fetchColumn(),
+        'lowStock' => (int) $pdo->query('SELECT COUNT(*) FROM products WHERE stock <= 9')->fetchColumn(),
+        'byStatus' => $pdo->query("SELECT status, COUNT(*) AS count, COALESCE(SUM(total), 0) AS sales,
+            SUM(CASE WHEN is_test = 1 THEN 1 ELSE 0 END) AS test_count
+            FROM orders WHERE is_demo = 0 GROUP BY status ORDER BY status")->fetchAll(),
+        'topProducts' => $pdo->query("SELECT oi.product_name AS name, SUM(oi.quantity) AS units, SUM(oi.unit_price * oi.quantity) AS sales
+            FROM order_items oi JOIN orders o ON o.order_id = oi.order_id
+            WHERE o.is_demo = 0
+            GROUP BY oi.product_name ORDER BY units DESC, sales DESC LIMIT 10")->fetchAll(),
+        'monthlySales' => $monthlySales,
+        'salespeople' => $sellerRows,
+        'generatedAt' => date(DATE_ATOM),
+    ];
 }
 
 function valid_product(array $data): array
@@ -204,6 +403,7 @@ if ($method !== 'GET') {
 
 try {
     $pdo = database();
+    ensure_report_schema($pdo);
 
     if ($resource === 'auth') {
         $action = $segments[1] ?? '';
@@ -264,93 +464,63 @@ try {
 
     if ($resource === 'products') {
         if ($method === 'GET') {
-            $products = state_read($pdo, 'artesoft:v3:productos');
             if ($id !== null) {
-                foreach ($products as $product) {
-                    if ((string) ($product['id'] ?? '') === $id) {
-                        respond(200, ['ok' => true, 'data' => $product]);
-                    }
+                $product = find_product($pdo, $id);
+                if ($product !== null) {
+                    respond(200, ['ok' => true, 'data' => $product]);
                 }
                 respond(404, ['ok' => false, 'message' => 'Producto no encontrado.']);
             }
-            respond(200, ['ok' => true, 'data' => $products]);
+            respond(200, ['ok' => true, 'data' => products_list($pdo)]);
         }
-        $user = require_user(['administrador', 'operador']);
+        require_user(['administrador', 'operador']);
         if ($method === 'POST') {
             $product = valid_product(input());
             $product['id'] = 'p-' . bin2hex(random_bytes(6));
-            $pdo->beginTransaction();
-            $products = state_read($pdo, 'artesoft:v3:productos', true);
-            foreach ($products as $existing) {
-                if (mb_strtolower(trim((string) $existing['name'])) === mb_strtolower($product['name'])) {
-                    $pdo->rollBack();
+            try {
+                save_product($pdo, $product['id'], $product, true);
+            } catch (PDOException $error) {
+                if ($error->getCode() === '23000') {
                     respond(409, ['ok' => false, 'message' => 'Ya existe un producto con ese nombre.']);
                 }
+                throw $error;
             }
-            array_unshift($products, $product);
-            state_write($pdo, 'artesoft:v3:productos', $products);
-            $pdo->commit();
             respond(201, ['ok' => true, 'data' => $product]);
         }
         if ($id === null) {
             respond(400, ['ok' => false, 'message' => 'Indica el identificador del producto.']);
         }
-        if ($method === 'PUT' || $method === 'DELETE') {
-            $pdo->beginTransaction();
-        }
-        $products = state_read($pdo, 'artesoft:v3:productos', $method === 'PUT' || $method === 'DELETE');
-        $index = null;
-        foreach ($products as $key => $product) {
-            if ((string) ($product['id'] ?? '') === $id) {
-                $index = $key;
-                break;
-            }
-        }
-        if ($index === null) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
+        $existing = find_product($pdo, $id);
+        if ($existing === null) {
             respond(404, ['ok' => false, 'message' => 'Producto no encontrado.']);
         }
         if ($method === 'DELETE') {
             require_user(['administrador']);
-            array_splice($products, $index, 1);
-            state_write($pdo, 'artesoft:v3:productos', $products);
-            $pdo->commit();
+            $statement = $pdo->prepare('DELETE FROM products WHERE product_id = :id');
+            $statement->execute(['id' => $id]);
             respond(200, ['ok' => true]);
         }
-        $updated = array_merge($products[$index], valid_product(input()));
-        $updated['id'] = $products[$index]['id'];
-        foreach ($products as $key => $existing) {
-            if ($key !== $index && mb_strtolower(trim((string) $existing['name'])) === mb_strtolower($updated['name'])) {
-                $pdo->rollBack();
-                respond(409, ['ok' => false, 'message' => 'Ya existe un producto con ese nombre.']);
+        if ($method === 'PUT') {
+            $updated = valid_product(input());
+            try {
+                save_product($pdo, $id, $updated, false);
+            } catch (PDOException $error) {
+                if ($error->getCode() === '23000') {
+                    respond(409, ['ok' => false, 'message' => 'Ya existe un producto con ese nombre.']);
+                }
+                throw $error;
             }
+            $updated['id'] = $id;
+            respond(200, ['ok' => true, 'data' => $updated]);
         }
-        $products[$index] = $updated;
-        state_write($pdo, 'artesoft:v3:productos', $products);
-        $pdo->commit();
-        respond(200, ['ok' => true, 'data' => $updated]);
+        respond(405, ['ok' => false, 'message' => 'Método no permitido para productos.']);
     }
 
     if ($resource === 'orders') {
         if ($method === 'GET') {
             $user = current_user();
-            $orders = state_read($pdo, 'artesoft:v3:pedidos');
-            if ($user !== null && $user['role'] === 'cliente') {
-                $orders = array_values(array_filter($orders, static fn(array $order): bool =>
-                    (int) ($order['userId'] ?? 0) === (int) $user['id']
-                ));
-            } elseif ($user === null) {
-                $guestToken = $_SESSION['guest_order_token'] ?? '';
-                $orders = array_values(array_filter($orders, static fn(array $order): bool =>
-                    is_string($guestToken) && $guestToken !== '' && hash_equals($guestToken, (string) ($order['guestToken'] ?? ''))
-                ));
-            }
-            if ($id !== null) {
-                $orders = array_values(array_filter($orders, static fn(array $order): bool => (string) ($order['id'] ?? '') === $id));
-            }
-            respond(200, ['ok' => true, 'data' => $orders]);
+            $guestToken = $user === null ? ($_SESSION['guest_order_token'] ?? null) : null;
+            respond(200, ['ok' => true, 'data' => orders_list($pdo, $user, $guestToken, $id)]);
         }
         if ($method === 'POST') {
             $data = input();
@@ -376,37 +546,39 @@ try {
                 $customer['phone'] = $owner['phone'];
                 $customer['city'] = $owner['city'];
                 $customer['address'] = $owner['address'];
-            } else {
-                $_SESSION['guest_order_token'] ??= bin2hex(random_bytes(32));
             }
             $pdo->beginTransaction();
             try {
-                $products = state_read($pdo, 'artesoft:v3:productos', true);
                 $items = [];
                 $subtotal = 0;
                 foreach ($lines as $line) {
                     $productId = (string) ($line['productId'] ?? '');
                     $quantity = filter_var($line['quantity'] ?? null, FILTER_VALIDATE_INT);
-                    $productIndex = null;
-                    foreach ($products as $key => $product) {
-                        if ((string) ($product['id'] ?? '') === $productId) {
-                            $productIndex = $key;
-                            break;
-                        }
-                    }
-                    if ($productIndex === null || $quantity === false || $quantity < 1) {
+                    if ($quantity === false || $quantity < 1) {
                         throw new DomainException('Uno de los productos del pedido no es válido.');
                     }
-                    if ((int) $products[$productIndex]['stock'] < $quantity) {
-                        throw new DomainException('No hay existencias suficientes de ' . $products[$productIndex]['name'] . '.');
+                    $product = find_product($pdo, $productId, true);
+                    if ($product === null) {
+                        throw new DomainException('Uno de los productos del pedido ya no está disponible.');
                     }
-                    $product = $products[$productIndex];
-                    $products[$productIndex]['stock'] -= $quantity;
+                    if ($product['stock'] < $quantity) {
+                        throw new DomainException('No hay existencias suficientes de ' . $product['name'] . '.');
+                    }
+                    $stockUpdate = $pdo->prepare('UPDATE products SET stock = stock - :quantity WHERE product_id = :id AND stock >= :quantity');
+                    $stockUpdate->execute(['quantity' => $quantity, 'id' => $productId]);
+                    if ($stockUpdate->rowCount() !== 1) {
+                        throw new DomainException('Las existencias cambiaron. Revisa tu carrito e inténtalo de nuevo.');
+                    }
                     $items[] = ['productId' => $productId, 'name' => $product['name'], 'price' => (int) $product['price'], 'quantity' => $quantity];
                     $subtotal += (int) $product['price'] * $quantity;
                 }
                 $shipping = $subtotal === 0 || $subtotal >= 120000 ? 0 : 8900;
-                $orders = state_read($pdo, 'artesoft:v3:pedidos', true);
+                $guestToken = $owner === null || $owner['role'] !== 'cliente'
+                    ? ($_SESSION['guest_order_token'] ??= bin2hex(random_bytes(32)))
+                    : null;
+                $sellerUserId = $owner !== null && in_array($owner['role'], ['administrador', 'operador'], true)
+                    ? (int) $owner['id']
+                    : null;
                 $order = [
                     'id' => 'AT-' . strtoupper(bin2hex(random_bytes(3))),
                     'customer' => [
@@ -416,17 +588,13 @@ try {
                         'address' => trim((string) ($customer['address'] ?? '')),
                         'notes' => trim((string) ($customer['notes'] ?? '')),
                     ],
-                    'userId' => $owner !== null && $owner['role'] === 'cliente' ? (int) $owner['id'] : null,
-                    'guestToken' => $owner === null || $owner['role'] !== 'cliente' ? $_SESSION['guest_order_token'] : null,
                     'items' => $items, 'subtotal' => $subtotal, 'shipping' => $shipping, 'total' => $subtotal + $shipping,
+                    'seller' => $sellerUserId === null ? null : ['id' => $sellerUserId, 'name' => (string) $owner['name']],
                     'status' => 'Pedido recibido', 'payment' => 'Pago contra entrega',
                     'createdAt' => date(DATE_ATOM), 'demo' => false,
                 ];
-                array_unshift($orders, $order);
-                state_write($pdo, 'artesoft:v3:productos', $products);
-                state_write($pdo, 'artesoft:v3:pedidos', $orders);
+                insert_order($pdo, $order, $items, $owner !== null && $owner['role'] === 'cliente' ? (int) $owner['id'] : null, $guestToken, $sellerUserId);
                 $pdo->commit();
-                unset($order['guestToken']);
                 respond(201, ['ok' => true, 'data' => $order]);
             } catch (DomainException $error) {
                 if ($pdo->inTransaction()) {
@@ -447,20 +615,16 @@ try {
             if (!in_array($status, ['Pedido recibido', 'En preparación', 'Enviado', 'Entregado'], true)) {
                 respond(422, ['ok' => false, 'message' => 'El estado del pedido no es válido.']);
             }
-            $pdo->beginTransaction();
-            $orders = state_read($pdo, 'artesoft:v3:pedidos', true);
-            foreach ($orders as &$order) {
-                if ((string) ($order['id'] ?? '') === $id) {
-                    $order['status'] = $status;
-                    unset($order);
-                    state_write($pdo, 'artesoft:v3:pedidos', $orders);
-                    $pdo->commit();
-                    respond(200, ['ok' => true]);
+            $statement = $pdo->prepare('UPDATE orders SET status = :status WHERE order_id = :id');
+            $statement->execute(['status' => $status, 'id' => $id]);
+            if ($statement->rowCount() === 0) {
+                $exists = $pdo->prepare('SELECT 1 FROM orders WHERE order_id = :id');
+                $exists->execute(['id' => $id]);
+                if (!$exists->fetchColumn()) {
+                    respond(404, ['ok' => false, 'message' => 'Pedido no encontrado.']);
                 }
             }
-            unset($order);
-            $pdo->rollBack();
-            respond(404, ['ok' => false, 'message' => 'Pedido no encontrado.']);
+            respond(200, ['ok' => true]);
         }
         respond(405, ['ok' => false, 'message' => 'Operación de pedidos no permitida.']);
     }
@@ -557,35 +721,96 @@ try {
 
     if ($resource === 'reports' && $method === 'GET') {
         require_user(['administrador', 'operador', 'consulta']);
-        $type = $segments[1] ?? 'orders';
-        header_remove('Content-Type');
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename="artesoft-' . ($type === 'products' ? 'inventario' : 'pedidos') . '-' . date('Y-m-d') . '.csv"');
-        $output = fopen('php://output', 'wb');
-        if ($output === false) {
-            respond(500, ['ok' => false, 'message' => 'No se pudo generar el reporte.']);
+        $type = $segments[1] ?? 'summary';
+        if ($type === 'summary') {
+            respond(200, ['ok' => true, 'data' => report_summary($pdo)]);
         }
-        fwrite($output, "\xEF\xBB\xBF");
-        if ($type === 'products') {
-            fputcsv($output, ['ID', 'Producto', 'Categoría', 'Precio COP', 'Existencias']);
-            foreach (state_read($pdo, 'artesoft:v3:productos') as $product) {
-                fputcsv($output, array_map('csv_safe', [(string) $product['id'], (string) $product['name'], (string) $product['category'], (int) $product['price'], (int) $product['stock']]));
-            }
-        } elseif ($type === 'orders') {
-            fputcsv($output, ['Pedido', 'Fecha', 'Cliente', 'Correo', 'Estado', 'Subtotal COP', 'Envío COP', 'Total COP', 'Productos']);
-            foreach (state_read($pdo, 'artesoft:v3:pedidos') as $order) {
-                fputcsv($output, array_map('csv_safe', [
-                    (string) ($order['id'] ?? ''), (string) ($order['createdAt'] ?? ''),
-                    (string) ($order['customer']['name'] ?? ''), (string) ($order['customer']['email'] ?? ''),
-                    (string) ($order['status'] ?? ''), (int) ($order['subtotal'] ?? 0),
-                    (int) ($order['shipping'] ?? 0), (int) ($order['total'] ?? 0),
-                    implode('; ', array_map(static fn(array $item): string => (int) ($item['quantity'] ?? 0) . ' x ' . (string) ($item['name'] ?? ''), $order['items'] ?? [])),
-                ]));
-            }
-        } else {
+        if (!in_array($type, ['pdf', 'orders', 'products'], true)) {
             respond(404, ['ok' => false, 'message' => 'Tipo de reporte no encontrado.']);
         }
-        fclose($output);
+        if (!is_file(__DIR__ . '/../vendor/autoload.php')) {
+            respond(503, ['ok' => false, 'message' => 'Falta instalar Dompdf. Ejecuta composer install en el proyecto.']);
+        }
+        require_once __DIR__ . '/../vendor/autoload.php';
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', false);
+        $options->set('isPhpEnabled', false);
+        $options->set('defaultFont', 'DejaVu Sans');
+        $pdf = new \Dompdf\Dompdf($options);
+        $reportType = $type === 'pdf' ? 'summary' : $type;
+        $report = report_summary($pdo);
+        if ($reportType === 'orders') {
+            $orders = $pdo->query("SELECT o.order_id, o.is_demo, o.is_test, o.created_at, o.customer_name, o.customer_email, o.status,
+                o.subtotal, o.shipping, o.total, COALESCE(seller.name, 'Sin atribuir') AS seller_name
+                FROM orders o LEFT JOIN users seller ON seller.id = o.sold_by_user_id
+                ORDER BY o.created_at DESC, o.order_id DESC")->fetchAll();
+            $items = $pdo->query('SELECT order_id, product_name, quantity, unit_price FROM order_items ORDER BY id')->fetchAll();
+            $itemsByOrder = [];
+            foreach ($items as $item) {
+                $itemsByOrder[$item['order_id']][] = $item;
+            }
+            $statusCounts = [];
+            $sales = 0;
+            $testOrders = 0;
+            foreach ($orders as &$order) {
+                $order['items'] = $itemsByOrder[$order['order_id']] ?? [];
+                $order['type_label'] = (bool) $order['is_demo'] ? 'Demostración' : ((bool) $order['is_test'] ? 'Prueba' : 'Registrado');
+                $order['type_class'] = (bool) $order['is_demo'] ? 'tag-demo' : ((bool) $order['is_test'] ? '' : 'tag-registered');
+                $statusCounts[$order['status']] = ($statusCounts[$order['status']] ?? 0) + 1;
+                $sales += (float) $order['total'];
+                $testOrders += (bool) $order['is_test'] ? 1 : 0;
+            }
+            unset($order);
+            arsort($statusCounts);
+            $report['ordersData'] = $orders;
+            $report['orderStatusCounts'] = $statusCounts;
+            $report['orderCount'] = count($orders);
+            $report['orderSales'] = $sales;
+            $report['orderAverage'] = $orders ? $sales / count($orders) : 0;
+            $report['orderTestCount'] = $testOrders;
+        } elseif ($reportType === 'products') {
+            $products = $pdo->query('SELECT product_id, name, category, description, price, stock FROM products ORDER BY category, name')->fetchAll();
+            $categoryStats = [];
+            $totalUnits = 0;
+            $stockValue = 0;
+            $lowStock = 0;
+            $outOfStock = 0;
+            foreach ($products as $product) {
+                $stock = (int) $product['stock'];
+                $totalUnits += $stock;
+                $stockValue += $stock * (float) $product['price'];
+                $lowStock += $stock > 0 && $stock <= 5 ? 1 : 0;
+                $outOfStock += $stock === 0 ? 1 : 0;
+                $category = $product['category'];
+                $categoryStats[$category] = ($categoryStats[$category] ?? 0) + $stock;
+                $product['stock_state'] = $stock === 0 ? 'Agotado' : ($stock <= 5 ? 'Reponer' : 'Disponible');
+                $product['stock_class'] = $stock === 0 ? 'stock-empty' : ($stock <= 5 ? 'stock-low' : '');
+                $inventoryProducts[] = $product;
+            }
+            $report['inventoryProducts'] = $inventoryProducts ?? [];
+            $report['categoryStats'] = $categoryStats;
+            $report['productCount'] = count($products);
+            $report['totalUnits'] = $totalUnits;
+            $report['stockValue'] = $stockValue;
+            $report['lowStockCount'] = $lowStock;
+            $report['outOfStockCount'] = $outOfStock;
+        }
+        ob_start();
+        require __DIR__ . '/report_template.php';
+        $html = ob_get_clean();
+        $pdf->loadHtml($html, 'UTF-8');
+        $pdf->setPaper('A4', 'portrait');
+        $pdf->render();
+        header_remove('Content-Type');
+        header('Content-Type: application/pdf');
+        $filename = match ($reportType) {
+            'orders' => 'artesoft-pedidos-',
+            'products' => 'artesoft-inventario-',
+            default => 'artesoft-reporte-',
+        };
+        header('Content-Disposition: attachment; filename="' . $filename . date('Y-m-d') . '.pdf"');
+        header('Cache-Control: no-store');
+        echo $pdf->output();
         exit;
     }
 
@@ -593,12 +818,4 @@ try {
 } catch (Throwable $error) {
     error_log('ARTESOFT API failed: ' . $error->getMessage());
     respond(500, ['ok' => false, 'message' => 'Ocurrió un error interno al procesar la solicitud.']);
-}
-
-function csv_safe(mixed $value): string|int
-{
-    if (!is_string($value)) {
-        return $value;
-    }
-    return preg_match('/^[\s]*[=+\-@]/u', $value) ? "'" . $value : $value;
 }

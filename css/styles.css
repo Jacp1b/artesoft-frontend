@@ -261,6 +261,26 @@ main:focus { outline: 0; }
 .metric-number { display: block; margin-top: 7px; font: 800 23px/1 "DM Sans", sans-serif; letter-spacing: -.055em; }
 .metric-foot { display: block; margin-top: 5px; color: #96929f; font-size: 8px; }
 .admin-grid-two { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(220px,.8fr); gap: 13px; }
+.report-grid { margin-top: 13px; }
+.report-highlight { display: flex; align-items: center; gap: 13px; margin: -4px 0 16px; padding: 14px 17px; border: 1px solid #e8e3f2; border-radius: 14px; background: linear-gradient(110deg,#f8f6ff,#fbfbee); }
+.report-highlight-icon { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border-radius: 12px; background: #eae5fb; color: #6651b2; font-size: 19px; }
+.report-highlight > div { display: grid; gap: 3px; }
+.report-highlight .eyebrow { color: #817798; font-size: 8px; }
+.report-highlight strong { color: #30294d; font-size: 13px; }
+.report-highlight span:last-child { color: #858191; font-size: 9px; }
+.report-bars { display: grid; gap: 11px; margin: 14px 0; }
+.report-bar-row { display: grid; grid-template-columns: minmax(82px, 1fr) minmax(70px, 1.8fr) minmax(76px, auto); align-items: center; gap: 9px; }
+.report-bar-label { overflow: hidden; color: #666174; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.report-bar-track { height: 8px; overflow: hidden; border-radius: 8px; background: #f0edf5; }
+.report-bar-fill { display: block; height: 100%; min-width: 0; border-radius: inherit; background: #8c78d4; }
+.report-bar-fill.is-green { background: #a3bc36; }
+.report-bar-fill.is-peach { background: #e79870; }
+.report-bar-value { color: #4a455b; font-size: 9px; text-align: right; white-space: nowrap; }
+.report-empty, .report-footnote { color: #858191; font-size: 9px; line-height: 1.6; }
+.report-footnote { margin: 8px 0 0; }
+.report-test-notice { margin: -4px 0 15px; padding: 11px 14px; border: 1px solid #f1d7a4; border-radius: 11px; background: #fff8e9; color: #76521c; font-size: 10px; line-height: 1.6; }
+.order-test-label, .order-type-label { display: inline-block; padding: 3px 6px; border-radius: 999px; background: #fff0cf; color: #825416; font-size: 8px; font-weight: 800; vertical-align: middle; }
+.order-type-label { background: #edf5db; color: #506819; }
 .admin-panel { min-width: 0; padding: 17px; border: 1px solid #ebe8f0; border-radius: 14px; background: #fff; }
 .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
 .panel-head h2 { margin: 0; font: 800 13px "DM Sans", sans-serif; letter-spacing: -.02em; }
@@ -356,6 +376,17 @@ main:focus { outline: 0; }
 .customer-registration-fields { display: grid; gap: 8px; }
 .customer-registration-fields[hidden] { display: none; }
 .customer-registration-fields label { color: #555164; font-size: 10px; font-weight: 700; }
+.test-login-options { display: grid; gap: 7px; padding: 10px; border: 1px solid #e8e2f2; border-radius: 10px; background: #faf8fd; }
+.test-login-options[hidden] { display: none; }
+.test-login-options > strong { color: var(--purple-dark); font-size: 10px; }
+.test-login-options > p { margin: 0; color: #777282; font-size: 9px; line-height: 1.5; }
+.test-login-options code { color: #514385; font-weight: 700; }
+.test-login-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.test-login-option { min-width: 0; padding: 7px; border: 1px solid #ebe6f3; border-radius: 7px; color: #514d60; background: white; cursor: pointer; text-align: left; }
+.test-login-option:hover, .test-login-option:focus-visible { border-color: #b7a9df; background: #f5f1fc; }
+.test-login-option strong, .test-login-option span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.test-login-option strong { font-size: 9px; }
+.test-login-option span { margin-top: 3px; color: #8a8693; font-size: 7px; }
 .saved-delivery-details { padding: 13px; border: 1px solid #e9e5dd; border-radius: 11px; background: white; font-size: 10px; }
 .saved-delivery-details strong { display: block; margin-bottom: 7px; color: var(--purple-dark); }
 .saved-delivery-details p { margin: 3px 0; color: #767487; }
