@@ -104,16 +104,6 @@
       <label for="customerAuthPassword">Contraseña</label>
       <input id="customerAuthPassword" name="password" type="password" autocomplete="current-password" minlength="8" maxlength="128" required>
       <p class="form-hint" id="customerAuthNotice">Administración inicial: admin@artesoft.local · contraseña temporal: Demo1234! Cámbiala después del primer acceso.</p>
-      <section class="test-login-options" id="testLoginOptions" aria-label="Cuentas de prueba">
-        <strong>Acceso rápido a perfiles de prueba</strong>
-        <p>Contraseña compartida: <code>Prueba2026!</code>. Selecciona un perfil para completar el formulario.</p>
-        <div class="test-login-grid">
-          <button type="button" class="test-login-option" data-action="fill-test-login" data-test-email="admin.prueba1@artesoft.local"><strong>Administración</strong><span>admin.prueba1@artesoft.local</span></button>
-          <button type="button" class="test-login-option" data-action="fill-test-login" data-test-email="operador.prueba1@artesoft.local"><strong>Operación</strong><span>operador.prueba1@artesoft.local</span></button>
-          <button type="button" class="test-login-option" data-action="fill-test-login" data-test-email="consulta.prueba1@artesoft.local"><strong>Consulta</strong><span>consulta.prueba1@artesoft.local</span></button>
-          <button type="button" class="test-login-option" data-action="fill-test-login" data-test-email="cliente.prueba1@artesoft.local"><strong>Cliente</strong><span>cliente.prueba1@artesoft.local</span></button>
-        </div>
-      </section>
       <button class="button button-primary button-wide" id="customerAuthSubmit" type="submit">Iniciar sesión <span aria-hidden="true">→</span></button>
     </form>
   </dialog>
