@@ -1,64 +1,59 @@
-# ARTESOFT · Tienda web PHP y MySQL
+# ARTESOFT · Tienda web con Laravel
 
-Aplicación para Arte Didáctica S.A.S. Usa PHP para el backend y API REST, MySQL para usuarios, productos y pedidos, y JavaScript/CSS para la interfaz.
+Aplicación para Arte Didáctica S.A.S. Usa Laravel para el backend y la API REST, MySQL para usuarios, productos y pedidos, y conserva la interfaz JavaScript/CSS existente.
 
 ## Instalación
 
-Requisitos: PHP 8.1 o superior con PDO MySQL y las extensiones `mbstring`, `json` y `zip` (o una herramienta ZIP compatible para Composer); MySQL 8.0 o superior; Composer.
+Requisitos: PHP 8.3 o superior con PDO MySQL, `mbstring`, `json` y `zip`; MySQL 8.0 o superior; Composer.
 
-1. Importa `database.sql` en MySQL. Crea la base `artesoft`, sus tablas, la cuenta inicial de administración y ocho cuentas de prueba.
-2. Ejecuta `composer install` para instalar Dompdf, necesario para descargar los informes PDF.
-3. Configura `ARTESOFT_DB_HOST`, `ARTESOFT_DB_NAME`, `ARTESOFT_DB_USER` y `ARTESOFT_DB_PASSWORD`, o modifica los valores predeterminados en `config/database.php`.
-4. En la carpeta del proyecto, ejecuta `php -S 127.0.0.1:8000`.
-5. Abre `http://127.0.0.1:8000/index.php`.
+1. Instala las dependencias con `composer install`.
+2. Copia `.env.example` a `.env` y configura `DB_HOST`, `DB_DATABASE`, `DB_USERNAME` y `DB_PASSWORD`. Crea la base de datos indicada en `DB_DATABASE`.
+3. Genera la clave de la aplicación con `php artisan key:generate`.
+4. Crea el esquema y los datos iniciales con `php artisan migrate --seed`.
+5. Inicia el servidor de desarrollo con `php artisan serve --host=127.0.0.1 --port=8000` y abre `http://127.0.0.1:8000`.
 
-El acceso inicial es `admin@artesoft.local` con contraseña temporal `Demo1234!`. Cambia la contraseña inmediatamente desde **Cuentas**. Publica el sitio detrás de HTTPS y configura credenciales de base de datos propias antes de usarlo fuera de desarrollo.
+El acceso inicial es `admin@artesoft.local` con contraseña temporal `Demo1234!`. En una instalación nueva puedes definirla con `ARTESOFT_ADMIN_PASSWORD` antes de ejecutar el seeder. Cámbiala inmediatamente desde **Cuentas**. Publica el sitio con el directorio `public` como raíz web, habilita HTTPS, configura `SESSION_SECURE_COOKIE=true` y credenciales propias antes de desplegar.
 
 Las cuentas de prueba son `admin.prueba1@artesoft.local`, `admin.prueba2@artesoft.local`, `operador.prueba1@artesoft.local`, `operador.prueba2@artesoft.local`, `consulta.prueba1@artesoft.local`, `consulta.prueba2@artesoft.local`, `cliente.prueba1@artesoft.local` y `cliente.prueba2@artesoft.local`; todas usan temporalmente `Prueba2026!`. Elimina estas cuentas o cambia sus contraseñas antes de desplegar.
 
-La aplicación crea el catálogo y los pedidos de demostración en las tablas `products`, `orders` y `order_items` al iniciar por primera vez; estos no se consideran ventas. Para agregar ocho pedidos de prueba persistidos, etiquetados como prueba y atribuidos a los empleados de prueba, en InfinityFree u otro host sin SSH, inicia sesión como administrador, abre `https://tu-dominio/seed-test-orders.php` y pulsa **Ejecutar seeder**. Primero abre la aplicación al menos una vez para inicializar la base de datos. Al terminar, elimina `seed-test-orders.php` del hosting. También puedes ejecutarlo por CLI con `php config/seed-test-orders.php`. El script es idempotente y no modifica las existencias. Los pedidos de prueba se incluyen en las estadísticas para probar los reportes, pero el sistema los marca claramente y no representan ventas reales. Si actualizas una instalación previa, la API agrega automáticamente las columnas de atribución y clasificación de prueba.
+El seeder instala el catálogo y los pedidos de demostración, que no se consideran ventas. Para crear ocho pedidos de prueba persistidos, etiquetados y atribuidos a empleados, ejecuta `php artisan artesoft:seed-test-orders`. El comando es idempotente y no modifica las existencias. Los pedidos de prueba aparecen identificados en los informes y no representan ventas reales. Las migraciones reconocen las tablas existentes y agregan las columnas de atribución y clasificación de prueba que falten.
 
 ## API REST
 
-La API recibe y devuelve JSON, excepto las rutas de reportes, que descargan archivos PDF. Las rutas usan `api/index.php?resource=...`; las operaciones que modifican datos requieren el encabezado `X-CSRF-Token` que entrega la página.
+La API recibe y devuelve JSON, excepto los informes, que descargan archivos PDF. Se conserva el formato de URL y las respuestas que usa la interfaz existente: `api/index.php?resource=...`. Las operaciones que modifican datos requieren la sesión y el encabezado `X-CSRF-Token` entregado por la página.
 
 | Recurso | Métodos | Acceso |
 |---|---|---|
 | `auth/me` | GET | Público: devuelve el usuario de sesión y token CSRF |
 | `auth/login`, `auth/register`, `auth/logout` | POST | Login/registro públicos; logout requiere sesión |
-| `products`, `products&id={id}` | GET, POST, PUT, DELETE | Lectura pública; escritura requiere sesión; borrar solo administración |
-| `orders`, `orders&id={id}` | GET, POST, PUT | Pedidos propios para cliente/invitado; historial completo y cambios de estado para equipo |
+| `products`, `products&id={id}` | GET, POST, PUT, DELETE | Lectura pública; escritura para administración/operación; borrar solo administración |
+| `orders`, `orders&id={id}` | GET, POST, PUT | Pedidos propios para cliente/invitado; historial completo y cambios de estado para el equipo |
 | `users`, `users&id={id}` | GET, POST, PUT, DELETE | Solo administración |
-| `reports/summary` | GET | Usuarios autenticados del equipo; análisis JSON |
-| `reports/pdf` | GET | Usuarios autenticados del equipo; descarga de informe PDF |
-| `reports/orders`, `reports/products` | GET | Usuarios autenticados del equipo; descarga PDF detallado de pedidos o inventario |
+| `reports/summary` | GET | Equipo autenticado: análisis JSON |
+| `reports/pdf` | GET | Equipo autenticado: informe general en PDF |
+| `reports/orders`, `reports/products` | GET | Equipo autenticado: informes PDF de pedidos o inventario |
 
-Ejemplo de URL de consulta: `api/index.php?resource=products`. El método HTTP determina la operación; para PUT y DELETE el identificador va en el parámetro `id`. Los permisos se verifican en el servidor, no solo en la interfaz.
+El método HTTP determina la operación; para PUT y DELETE, el identificador va en el parámetro `id`. Los permisos se validan en el servidor.
 
 ## Funcionalidades
 
-- Registro de clientes y login con `password_hash` / `password_verify`, cookies de sesión `HttpOnly` y `SameSite`, regeneración del identificador y protección CSRF.
-- CRUD de productos con validación de campos, permisos por rol y persistencia MySQL.
-- CRUD de usuarios para administración, contraseñas almacenadas como hash y protección contra eliminar o degradar la última cuenta administradora.
-- Pedidos con cálculo de precios y envío en el servidor, control transaccional de existencias y consulta privada para cada cliente.
-- Atribución de pedidos creados desde perfiles de administración u operación; los informes muestran ventas por empleado.
-- Pedidos de prueba idempotentes, atribuidos al vendedor y cliente correspondientes; están diferenciados de demostraciones y ventas reales.
-- Panel con resumen, inventario, pedidos, clientes y reportes con tendencias de seis meses, ventas por estado, clasificación del equipo y productos más vendidos.
-- Informes PDF de ventas, pedidos detallados e inventario, con métricas, gráficos tabulares y datos consultados desde la base de datos.
-- Carrito local del navegador; los productos, pedidos, usuarios y cambios de inventario se guardan en la base de datos.
+- Registro y acceso con contraseñas hasheadas, sesiones Laravel y protección CSRF.
+- CRUD de productos y usuarios con validación y permisos por rol; no se puede eliminar ni degradar la última cuenta administradora.
+- Pedidos con precios y envío calculados por el servidor, transacciones de inventario y consulta privada para cada cliente.
+- Atribución de pedidos creados desde perfiles de administración u operación e informes de rendimiento del equipo.
+- Panel con inventario, pedidos, clientes y reportes con tendencias, estados y productos más vendidos.
+- Informes PDF de ventas, pedidos e inventario.
+- Carrito local en el navegador; productos, pedidos, usuarios y existencias se guardan en MySQL.
 
-El catálogo y los pedidos de ejemplo se inicializan de forma segura en el servidor durante la primera visita; la API no acepta escrituras públicas de inicialización. Los datos de ejemplo no deben confundirse con ventas reales.
+El sistema no integra pasarelas de pago ni facturación electrónica. No publiques `.env`; cambia las credenciales temporales de administración y de prueba antes del despliegue.
 
 ## Estructura
 
-- `index.php`: página inicial, inicialización de datos de ejemplo y token CSRF.
+- `artisan`, `bootstrap/` y `routes/`: entrada y configuración de Laravel, rutas web/API y comandos.
+- `app/Http/Controllers/`: storefront y API.
+- `database/migrations/` y `database/seeders/`: esquema, compatibilidad con bases previas y datos de demostración.
+- `resources/views/store.blade.php`: interfaz conservada, servida por Laravel.
+- `public/js/`, `public/css/` y `public/assets/`: recursos estáticos del storefront.
+- `api/report_template.php`: plantilla del informe PDF.
 - `config/demo-data.php`: catálogo y pedidos de demostración iniciales.
-- `api/index.php`: API REST, autenticación, permisos, operaciones de dominio, migraciones y reportes.
-- `seed-test-orders.php`: herramienta temporal protegida para ejecutar el seeder desde un navegador.
-- `api/report_template.php`: plantilla del informe PDF descargable.
-- `config/database.php`: conexión PDO.
-- `database.sql`: base, tablas y cuenta inicial.
-- `composer.json` / `composer.lock`: dependencia de Dompdf.
-- `js/`: componentes de interfaz y clientes de API.
-
-El sistema no integra pasarelas de pago ni facturación electrónica. La cuenta de administración inicial tiene una contraseña temporal conocida; cámbiala antes de desplegar.
+- `composer.json` / `composer.lock`: Laravel y Dompdf.

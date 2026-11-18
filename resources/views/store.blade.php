@@ -1,127 +1,3 @@
-<?php
-declare(strict_types=1);
-
-require_once __DIR__ . '/config/database.php';
-
-ini_set('session.use_strict_mode', '1');
-ini_set('session.use_only_cookies', '1');
-session_set_cookie_params([
-    'httponly' => true,
-    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
-    'samesite' => 'Lax',
-    'path' => '/',
-]);
-session_start();
-if (!isset($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-header('Cache-Control: no-store');
-
-try {
-    $database = artesoft_database();
-    $driver = $database->getAttribute(PDO::ATTR_DRIVER_NAME);
-    if ($driver === 'sqlite') {
-        $database->exec("INSERT OR IGNORE INTO app_state (state_key, payload) VALUES ('artesoft:v4:relational-initialized', '[\"pending\"]')");
-    } else {
-        $database->exec("INSERT IGNORE INTO app_state (state_key, payload) VALUES ('artesoft:v4:relational-initialized', JSON_ARRAY('pending'))");
-    }
-    $database->beginTransaction();
-    try {
-        $lockSuffix = $driver === 'sqlite' ? '' : ' FOR UPDATE';
-        $marker = $database->query("SELECT payload FROM app_state WHERE state_key = 'artesoft:v4:relational-initialized'{$lockSuffix}")->fetchColumn();
-        $initialized = $marker !== false && json_decode((string) $marker, true) === ['done'];
-        if (!$initialized) {
-            $legacy = $database->prepare("SELECT state_key, payload FROM app_state WHERE state_key IN ('artesoft:v3:productos', 'artesoft:v3:pedidos')");
-            $legacy->execute();
-            $legacyData = [];
-            foreach ($legacy->fetchAll() as $row) {
-                $legacyData[$row['state_key']] = json_decode($row['payload'], true, 512, JSON_THROW_ON_ERROR);
-            }
-            $demoData = require __DIR__ . '/config/demo-data.php';
-            $productCount = (int) $database->query('SELECT COUNT(*) FROM products')->fetchColumn();
-            $sourceProducts = $productCount > 0
-                ? []
-                : (($legacyData['artesoft:v3:productos'] ?? []) ?: $demoData['products']);
-            $insertProduct = $database->prepare('INSERT INTO products (product_id, name, category, price, stock, description, badge, image, color, icon) VALUES (:id, :name, :category, :price, :stock, :description, :badge, :image, :color, :icon)');
-            foreach ($sourceProducts as $product) {
-                $insertProduct->execute([
-                    'id' => (string) $product['id'], 'name' => (string) $product['name'], 'category' => (string) $product['category'],
-                    'price' => (int) $product['price'], 'stock' => (int) $product['stock'], 'description' => (string) ($product['description'] ?? ''),
-                    'badge' => (string) ($product['badge'] ?? ''), 'image' => (string) ($product['image'] ?? ''),
-                    'color' => (string) ($product['color'] ?? 'lilac'), 'icon' => (string) ($product['icon'] ?? '🎨'),
-                ]);
-            }
-
-            $orderCount = (int) $database->query('SELECT COUNT(*) FROM orders')->fetchColumn();
-            $sourceOrders = $orderCount > 0
-                ? []
-                : (($legacyData['artesoft:v3:pedidos'] ?? []) ?: $demoData['orders']);
-            $knownProducts = array_fill_keys(array_map('strval', $database->query('SELECT product_id FROM products')->fetchAll(PDO::FETCH_COLUMN)), true);
-            $knownUsers = array_fill_keys(array_map('strval', $database->query('SELECT id FROM users')->fetchAll(PDO::FETCH_COLUMN)), true);
-            $insertOrder = $database->prepare('INSERT INTO orders (order_id, customer_user_id, guest_token_hash, customer_name, customer_email, customer_phone, customer_city, customer_address, customer_notes, subtotal, shipping, total, status, payment, is_demo, created_at) VALUES (:id, :user_id, :guest_hash, :name, :email, :phone, :city, :address, :notes, :subtotal, :shipping, :total, :status, :payment, :is_demo, :created_at)');
-            $insertItem = $database->prepare('INSERT INTO order_items (order_id, product_id, product_name, unit_price, quantity) VALUES (:order_id, :product_id, :name, :price, :quantity)');
-            foreach ($sourceOrders as $order) {
-                $customer = $order['customer'] ?? [];
-                $date = new DateTimeImmutable((string) ($order['createdAt'] ?? 'now'));
-                $legacyUserId = isset($order['userId']) ? (string) $order['userId'] : '';
-                $insertOrder->execute([
-                    'id' => (string) $order['id'], 'user_id' => isset($knownUsers[$legacyUserId]) ? (int) $legacyUserId : null,
-                    'guest_hash' => isset($order['guestToken']) ? hash('sha256', (string) $order['guestToken']) : null,
-                    'name' => (string) ($customer['name'] ?? ''), 'email' => (string) ($customer['email'] ?? ''),
-                    'phone' => (string) ($customer['phone'] ?? ''), 'city' => (string) ($customer['city'] ?? ''),
-                    'address' => (string) ($customer['address'] ?? ''), 'notes' => (string) ($customer['notes'] ?? ''),
-                    'subtotal' => (int) ($order['subtotal'] ?? 0), 'shipping' => (int) ($order['shipping'] ?? 0),
-                    'total' => (int) ($order['total'] ?? 0), 'status' => (string) ($order['status'] ?? 'Pedido recibido'),
-                    'payment' => (string) ($order['payment'] ?? 'Pago contra entrega'), 'is_demo' => !empty($order['demo']) ? 1 : 0,
-                    'created_at' => $date->format('Y-m-d H:i:s'),
-                ]);
-                foreach ($order['items'] ?? [] as $item) {
-                    $insertItem->execute([
-                        'order_id' => (string) $order['id'],
-                        'product_id' => isset($knownProducts[(string) ($item['productId'] ?? '')]) ? (string) $item['productId'] : null,
-                        'name' => (string) ($item['name'] ?? ''), 'price' => (int) ($item['price'] ?? 0),
-                        'quantity' => (int) ($item['quantity'] ?? 0),
-                    ]);
-                }
-            }
-            $done = json_encode(['done']);
-            $updateMarker = $database->prepare("UPDATE app_state SET payload = :payload WHERE state_key = 'artesoft:v4:relational-initialized'");
-            $updateMarker->execute(['payload' => $done]);
-        }
-        $database->commit();
-    } catch (Throwable $error) {
-        if ($database->inTransaction()) {
-            $database->rollBack();
-        }
-        throw $error;
-    }
-
-    $initialState = [
-        'artesoft:v3:productos' => array_map(static fn(array $row): array => [
-            'id' => $row['product_id'], 'name' => $row['name'], 'category' => $row['category'],
-            'price' => (int) $row['price'], 'stock' => (int) $row['stock'], 'description' => $row['description'],
-            'badge' => $row['badge'], 'image' => $row['image'], 'color' => $row['color'], 'icon' => $row['icon'],
-        ], $database->query('SELECT product_id, name, category, price, stock, description, badge, image, color, icon FROM products ORDER BY created_at, product_id')->fetchAll()),
-        'artesoft:v3:pedidos' => [],
-    ];
-} catch (Throwable $error) {
-    error_log('ARTESOFT database bootstrap failed: ' . $error->getMessage());
-    http_response_code(500);
-    ?>
-    <!doctype html>
-    <html lang="es">
-    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ARTESOFT · Configuración requerida</title></head>
-    <body>
-      <main>
-        <h1>No se pudo conectar con la base de datos</h1>
-        <p>Importa <code>database.sql</code> en MySQL y revisa los datos de conexión en <code>config/database.php</code>.</p>
-      </main>
-    </body>
-    </html>
-    <?php
-    exit;
-}
-?>
 <!doctype html>
 <html lang="es">
 <head>
@@ -133,7 +9,7 @@ try {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="{{ asset('css/styles.css') }}">
 </head>
 <body>
   <a class="skip-link" href="#main">Saltar al contenido</a>
@@ -247,28 +123,28 @@ try {
 
   <script>
     window.Artesoft = window.Artesoft || {};
-    window.Artesoft.initialState = <?= json_encode($initialState, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?>;
-  window.Artesoft.csrfToken = <?= json_encode($_SESSION['csrf_token'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?>;
+    window.Artesoft.initialState = {{ Illuminate\Support\Js::from($initialState) }};
+  window.Artesoft.csrfToken = {{ Illuminate\Support\Js::from($csrfToken) }};
   </script>
-  <script defer src="js/core/storageService.js"></script>
-  <script defer src="js/core/helpers.js"></script>
-  <script defer src="js/core/permissions.js"></script>
-  <script defer src="js/auth/userRepository.js"></script>
-  <script defer src="js/auth/authModel.js"></script>
-  <script defer src="js/auth/authView.js"></script>
-  <script defer src="js/auth/userAdminView.js"></script>
-  <script defer src="js/auth/authController.js"></script>
-  <script defer src="js/productos/productoModel.js"></script>
-  <script defer src="js/productos/productoView.js"></script>
-  <script defer src="js/productos/productoController.js"></script>
-  <script defer src="js/carrito/carritoModel.js"></script>
-  <script defer src="js/carrito/carritoView.js"></script>
-  <script defer src="js/carrito/carritoController.js"></script>
-  <script defer src="js/pedidos/pedidoModel.js"></script>
-  <script defer src="js/pedidos/pedidoView.js"></script>
-  <script defer src="js/pedidos/pedidoController.js"></script>
-  <script defer src="js/inventario/inventarioView.js"></script>
-  <script defer src="js/inventario/inventarioController.js"></script>
-  <script defer src="js/app.js"></script>
+  <script defer src="{{ asset('js/core/storageService.js') }}"></script>
+  <script defer src="{{ asset('js/core/helpers.js') }}"></script>
+  <script defer src="{{ asset('js/core/permissions.js') }}"></script>
+  <script defer src="{{ asset('js/auth/userRepository.js') }}"></script>
+  <script defer src="{{ asset('js/auth/authModel.js') }}"></script>
+  <script defer src="{{ asset('js/auth/authView.js') }}"></script>
+  <script defer src="{{ asset('js/auth/userAdminView.js') }}"></script>
+  <script defer src="{{ asset('js/auth/authController.js') }}"></script>
+  <script defer src="{{ asset('js/productos/productoModel.js') }}"></script>
+  <script defer src="{{ asset('js/productos/productoView.js') }}"></script>
+  <script defer src="{{ asset('js/productos/productoController.js') }}"></script>
+  <script defer src="{{ asset('js/carrito/carritoModel.js') }}"></script>
+  <script defer src="{{ asset('js/carrito/carritoView.js') }}"></script>
+  <script defer src="{{ asset('js/carrito/carritoController.js') }}"></script>
+  <script defer src="{{ asset('js/pedidos/pedidoModel.js') }}"></script>
+  <script defer src="{{ asset('js/pedidos/pedidoView.js') }}"></script>
+  <script defer src="{{ asset('js/pedidos/pedidoController.js') }}"></script>
+  <script defer src="{{ asset('js/inventario/inventarioView.js') }}"></script>
+  <script defer src="{{ asset('js/inventario/inventarioController.js') }}"></script>
+  <script defer src="{{ asset('js/app.js') }}"></script>
 </body>
 </html>

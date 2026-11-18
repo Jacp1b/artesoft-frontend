@@ -1,5 +1,9 @@
 <?php
-if (!isset($report) || !is_array($report)) {
+if (
+    !isset($report, $reportType)
+    || !is_array($report)
+    || !in_array($reportType, ['summary', 'orders', 'products'], true)
+) {
     http_response_code(404);
     exit;
 }
