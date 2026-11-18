@@ -39,7 +39,7 @@ El método HTTP determina la operación; para PUT y DELETE, el identificador va 
 
 - Registro y acceso con contraseñas hasheadas, sesiones Laravel y protección CSRF.
 - CRUD de productos y usuarios con validación y permisos por rol; no se puede eliminar ni degradar la última cuenta administradora.
-- Pedidos con precios y envío calculados por el servidor, transacciones de inventario y consulta privada para cada cliente.
+- Pedidos con precios y envío calculados por el servidor, transacciones de inventario y consulta privada para cada cliente. Administración y operación pueden abrir la tienda desde su panel para registrar pedidos atribuidos a su cuenta.
 - Atribución de pedidos creados desde perfiles de administración u operación e informes de rendimiento del equipo.
 - Panel con inventario, pedidos, clientes y reportes con tendencias, estados y productos más vendidos.
 - Informes PDF de ventas, pedidos e inventario.

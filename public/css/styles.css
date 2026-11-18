@@ -236,6 +236,8 @@ main:focus { outline: 0; }
 .admin-brand .brand-mark span:nth-child(4) { border-radius: 2px 7px 7px 7px; }
 .admin-top-actions { display: flex; align-items: center; gap: 10px; }
 .admin-demo-tag { padding: 5px 9px; border: 1px solid rgba(255,255,255,.18); border-radius: 99px; color: #e8e3f9; font-size: 9px; }
+.admin-store-link { min-height: 34px; padding: 0 11px; border: 1px solid rgba(255,255,255,.35); border-radius: 9px; color: white; background: transparent; cursor: pointer; font-size: 10px; font-weight: 700; }
+.admin-store-link:hover { background: rgba(255,255,255,.12); }
 .admin-user { display: inline-flex; align-items: center; gap: 8px; padding: 5px 7px; border: 1px solid rgba(255,255,255,.17); border-radius: 99px; background: rgba(255,255,255,.07); color: white; font-size: 10px; }
 .avatar { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 50%; color: var(--purple-dark); background: var(--lime); font-size: 10px; font-weight: 800; }
 .admin-body { display: grid; grid-template-columns: 205px minmax(0,1fr); width: min(1320px, calc(100% - 56px)); min-height: 680px; margin: 0 auto; }
@@ -525,6 +527,8 @@ main:focus { outline: 0; }
   .admin-brand .brand-mark { width: 22px; height: 22px; }
   .admin-demo-tag { display: none; }
   .admin-user { font-size: 8px; }
+  .admin-top-actions { gap: 6px; }
+  .admin-store-link { min-height: 32px; padding: 0 8px; font-size: 9px; }
   .admin-body { display: block; width: 100%; min-height: auto; }
   .admin-sidebar { display: none; }
   .admin-main { padding: 22px 14px 40px; }

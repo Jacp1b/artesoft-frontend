@@ -33,6 +33,7 @@
           <kbd>/</kbd>
         </label>
         <button class="button button-secondary button-small customer-auth-button" id="customerLoginButton" type="button" data-action="open-customer-auth" data-auth-mode="login">Iniciar sesión</button>
+        <button class="button button-secondary button-small customer-auth-button" id="staffAdminButton" type="button" data-route="admin" hidden>Panel de gestión</button>
         <button class="button button-primary button-small customer-auth-button" id="customerRegisterButton" type="button" data-action="open-customer-auth" data-auth-mode="register">Registrarse</button>
         <button class="cart-button" type="button" data-action="open-cart" aria-label="Abrir carrito">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h8.3a2 2 0 0 0 1.9-1.4L21 8H6"></path><circle cx="9.5" cy="20" r="1.2"></circle><circle cx="18" cy="20" r="1.2"></circle></svg>
@@ -42,7 +43,7 @@
       </div>
     </div>
     <div class="mobile-menu" id="mobileMenu" hidden>
-      <a href="#inicio" data-route="store">Inicio</a><a href="#catalogo" data-route="store" data-scroll="catalogo">Catálogo</a><a href="#pedidos" data-route="orders">Mis pedidos</a><button id="mobileCustomerLoginButton" type="button" data-action="open-customer-auth" data-auth-mode="login">Iniciar sesión</button><button id="mobileCustomerRegisterButton" type="button" data-action="open-customer-auth" data-auth-mode="register">Registrarse</button>
+      <a href="#inicio" data-route="store">Inicio</a><a href="#catalogo" data-route="store" data-scroll="catalogo">Catálogo</a><a href="#pedidos" data-route="orders">Mis pedidos</a><a href="#gestion" id="mobileStaffAdminLink" data-route="admin" hidden>Panel de gestión</a><button id="mobileCustomerLoginButton" type="button" data-action="open-customer-auth" data-auth-mode="login">Iniciar sesión</button><button id="mobileCustomerRegisterButton" type="button" data-action="open-customer-auth" data-auth-mode="register">Registrarse</button>
     </div>
   </header>
 

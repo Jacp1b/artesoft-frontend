@@ -39,8 +39,10 @@
     },
     refreshHeader() {
       const user = window.Artesoft.AuthModel.getCurrentUser();
+      const canAccessStaffPanel = ["administrador", "operador"].includes(user?.role);
       const loginButtons = [document.getElementById("customerLoginButton"), document.getElementById("mobileCustomerLoginButton")];
       const registerButtons = [document.getElementById("customerRegisterButton"), document.getElementById("mobileCustomerRegisterButton")];
+      const staffPanelLinks = [document.getElementById("staffAdminButton"), document.getElementById("mobileStaffAdminLink")];
       loginButtons.forEach((button) => {
         if (!button) return;
         button.dataset.action = user ? "logout" : "open-customer-auth";
@@ -49,6 +51,7 @@
         button.setAttribute("aria-label", user ? `Cerrar sesión de ${user.name}` : "Iniciar sesión");
       });
       registerButtons.forEach((button) => { if (button) button.hidden = Boolean(user); });
+      staffPanelLinks.forEach((link) => { if (link) link.hidden = !canAccessStaffPanel; });
     }
   };
   window.Artesoft = window.Artesoft || {};
