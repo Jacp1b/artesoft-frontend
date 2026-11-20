@@ -35,7 +35,7 @@
             <div class="hero-actions"><a class="button button-primary" href="#catalogo" data-scroll="catalogo">Explorar catálogo <span aria-hidden="true">↗</span></a><a class="button button-secondary" href="#categorias" data-scroll="categorias">Ver categorías</a></div>
             <div class="hero-proof"><span><i class="proof-check">✓</i> Compra fácil</span><span><i class="proof-check">✓</i> Pago contra entrega</span><span><i class="proof-check">✓</i> Stock visible</span></div>
           </div>
-          <figure class="hero-visual"><div class="hero-shape"></div><div class="hero-photo-frame"><img class="hero-photo" src="assets/products/playdough-dinosaurios.jpg" alt="Set de plastilina y moldes para crear figuras" fetchpriority="high"></div><span class="hero-doodle hero-doodle-one" aria-hidden="true">✳</span><span class="hero-doodle hero-doodle-two" aria-hidden="true">✂</span><div class="hero-sticker"><span>Ideas para</span> compartir</div><figcaption class="hero-caption">Un espacio para crear sin límites</figcaption></figure>
+          <figure class="hero-visual"><div class="hero-shape"></div><div class="hero-photo-frame"><img class="hero-photo" src="https://images.unsplash.com/photo-1542666704-ff97566ec537?auto=format&fit=crop&w=1200&q=85" alt="Materiales coloridos de arte listos para una tarde creativa" fetchpriority="high"></div><span class="hero-doodle hero-doodle-one" aria-hidden="true">✳</span><span class="hero-doodle hero-doodle-two" aria-hidden="true">✂</span><div class="hero-sticker"><span>Ideas para</span> compartir</div><figcaption class="hero-caption">Un espacio para crear sin límites</figcaption></figure>
         </section>
       </div>
       <div class="service-strip"><div class="service-inner">
