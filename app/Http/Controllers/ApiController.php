@@ -34,7 +34,7 @@ class ApiController extends Controller
                 'products' => $this->products($request, $method, $id),
                 'orders' => $this->orders($request, $method, $id),
                 'users' => $this->users($request, $method, $id),
-                'reports' => $this->reports($method, $segments[1] ?? 'summary'),
+                'reports' => $this->reports($method, implode('/', array_slice($segments, 1)) ?: 'summary'),
                 default => $this->respond(404, ['ok' => false, 'message' => 'Recurso no encontrado.']),
             };
         } catch (HttpResponseException $error) {
@@ -372,6 +372,15 @@ class ApiController extends Controller
         if ($type === 'summary') {
             return response()->json(['ok' => true, 'data' => $this->reportSummary()]);
         }
+        $normalizedCsvType = match ($type) {
+            'csv', 'general/csv', 'csv/general' => 'summary',
+            'orders/csv', 'csv/orders', 'orders-csv' => 'orders',
+            'products/csv', 'csv/products', 'products-csv', 'inventory/csv', 'csv/inventory' => 'products',
+            default => null,
+        };
+        if ($normalizedCsvType !== null) {
+            return $this->csvReport($normalizedCsvType);
+        }
         if (!in_array($type, ['pdf', 'orders', 'products'], true)) {
             return $this->respond(404, ['ok' => false, 'message' => 'Tipo de reporte no encontrado.']);
         }
@@ -407,6 +416,86 @@ class ApiController extends Controller
         ]);
     }
 
+    private function csvReport(string $reportType)
+    {
+        $report = $this->reportSummary();
+        $filename = 'artesoft-reporte-' . now()->format('Y-m-d') . '.csv';
+
+        if ($reportType === 'orders') {
+            $this->appendOrderReport($report);
+            $rows = [
+                ['Pedido', 'Tipo', 'Cliente', 'Correo', 'Telefono', 'Vendedor', 'Fecha', 'Subtotal', 'Envio', 'Total', 'Estado', 'Productos'],
+            ];
+            foreach ($report['ordersData'] as $order) {
+                $items = collect($order['items'])->map(
+                    static fn (array $item): string => $item['quantity'] . ' x ' . $item['product_name']
+                )->implode('; ');
+                $rows[] = [
+                    $order['order_id'],
+                    $order['type_label'],
+                    $order['customer_name'],
+                    $order['customer_email'],
+                    $order['customer_phone'] ?? '',
+                    $order['seller_name'],
+                    $order['created_at'],
+                    $order['subtotal'],
+                    $order['shipping'],
+                    $order['total'],
+                    $order['status'],
+                    $items,
+                ];
+            }
+            $filename = 'artesoft-pedidos-' . now()->format('Y-m-d') . '.csv';
+        } elseif ($reportType === 'products') {
+            $this->appendInventoryReport($report);
+            $rows = [
+                ['ID', 'Producto', 'Categoria', 'Precio', 'Stock', 'Estado', 'Valor en inventario'],
+            ];
+            foreach ($report['inventoryProducts'] as $product) {
+                $rows[] = [
+                    $product['product_id'],
+                    $product['name'],
+                    $product['category'],
+                    $product['price'],
+                    $product['stock'],
+                    $product['stock_state'],
+                    (int) $product['stock'] * (float) $product['price'],
+                ];
+            }
+            $filename = 'artesoft-inventario-' . now()->format('Y-m-d') . '.csv';
+        } else {
+            $rows = [
+                ['Indicador', 'Valor'],
+                ['Ventas registradas', $report['sales']],
+                ['Pedidos registrados', $report['orders']],
+                ['Pedidos por atender', $report['openOrders']],
+                ['Pedidos de prueba', $report['testOrders']],
+                ['Ventas de prueba', $report['testSales']],
+                ['Productos activos', $report['products']],
+                ['Inventario bajo', $report['lowStock']],
+            ];
+        }
+
+        $csv = "\xEF\xBB\xBF";
+        foreach ($rows as $row) {
+            $csv .= implode(',', array_map([$this, 'csvCell'], $row)) . "\r\n";
+        }
+        return response($csv, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'no-store',
+        ]);
+    }
+
+    private function csvCell($value): string
+    {
+        $text = str_replace(["\r", "\n"], ' ', (string) $value);
+        if (strpbrk($text, ",\"\r\n") !== false) {
+            $text = '"' . str_replace('"', '""', $text) . '"';
+        }
+        return $text;
+    }
+
     private function appendOrderReport(array &$report): void
     {
         $orders = DB::table('orders as o')
@@ -415,7 +504,7 @@ class ApiController extends Controller
             ->orderByDesc('o.order_id')
             ->get([
                 'o.order_id', 'o.is_demo', 'o.is_test', 'o.created_at',
-                'o.customer_name', 'o.customer_email', 'o.status', 'o.subtotal',
+                'o.customer_name', 'o.customer_email', 'o.customer_phone', 'o.status', 'o.subtotal',
                 'o.shipping', 'o.total', DB::raw("COALESCE(seller.name, 'Sin atribuir') AS seller_name"),
             ])->map(static fn (object $row): array => (array) $row)->all();
         $items = DB::table('order_items')->orderBy('id')->get()->groupBy('order_id');

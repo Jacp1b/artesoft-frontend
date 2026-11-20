@@ -65,4 +65,20 @@ class StorefrontApiTest extends TestCase
             $this->assertStringStartsWith('%PDF', $response->getContent());
         }
     }
+
+    public function test_csv_reports_download_as_utf8_csv(): void
+    {
+        $this->seed();
+        $adminId = DB::table('users')->where('email', 'admin@artesoft.local')->value('id');
+
+        foreach (['csv', 'orders/csv', 'products/csv'] as $type) {
+            $response = $this->withSession(['user_id' => $adminId])
+                ->get('/api/index.php?resource=reports/' . $type);
+
+            $response->assertOk()
+                ->assertHeader('Content-Type', 'text/csv; charset=UTF-8')
+                ->assertHeader('Cache-Control', 'no-store');
+            $this->assertStringStartsWith("\xEF\xBB\xBF", $response->getContent());
+        }
+    }
 }

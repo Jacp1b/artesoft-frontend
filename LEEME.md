@@ -32,6 +32,8 @@ La API recibe y devuelve JSON, excepto los informes, que descargan archivos PDF.
 | `reports/summary` | GET | Equipo autenticado: análisis JSON |
 | `reports/pdf` | GET | Equipo autenticado: informe general en PDF |
 | `reports/orders`, `reports/products` | GET | Equipo autenticado: informes PDF de pedidos o inventario |
+| `reports/csv` | GET | Equipo autenticado: informe general en CSV |
+| `reports/orders/csv`, `reports/products/csv` | GET | Equipo autenticado: informes CSV de pedidos o inventario |
 
 El método HTTP determina la operación; para PUT y DELETE, el identificador va en el parámetro `id`. Los permisos se validan en el servidor.
 
