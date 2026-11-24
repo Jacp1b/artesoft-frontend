@@ -13,7 +13,12 @@
 </head>
 <body>
   <a class="skip-link" href="#main">Saltar al contenido</a>
-  <div class="announcement"><span class="announcement-spark">✳</span> Ideas para jugar, crear y celebrar <span class="announcement-divider">·</span> Envíos en Bogotá y alrededores</div>
+  <div class="announcement" role="region" aria-label="Promociones">
+    <div class="announcement-track">
+      <span class="announcement-copy"><span class="announcement-spark" aria-hidden="true">✳</span> Ideas para jugar, crear y celebrar <span class="announcement-divider" aria-hidden="true">·</span> Envíos en Bogotá y alrededores</span>
+      <span class="announcement-copy" aria-hidden="true"><span class="announcement-spark">✳</span> Ideas para jugar, crear y celebrar <span class="announcement-divider">·</span> Envíos en Bogotá y alrededores</span>
+    </div>
+  </div>
 
   <header class="site-header">
     <div class="header-inner">
