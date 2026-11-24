@@ -44,6 +44,9 @@ foreach ($report['salespeople'] as $seller) {
     <div class="subtitle">Desempeño, tendencias, equipo comercial y productos con ventas registradas</div>
   <?php endif; ?>
   <div class="generated">Generado: <?= $escape(date('d/m/Y H:i', strtotime($report['generatedAt']))) ?> · Todos los valores en pesos colombianos (COP).</div>
+  <?php if (!empty($report['filtersLabel'])): ?>
+  <div class="generated">Filtros: <?= $escape($report['filtersLabel']) ?></div>
+  <?php endif; ?>
 </header>
 
 <?php if ($reportType === 'summary'): ?>

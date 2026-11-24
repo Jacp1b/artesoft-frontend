@@ -73,7 +73,7 @@ class StorefrontApiTest extends TestCase
 
         foreach (['csv', 'orders/csv', 'products/csv'] as $type) {
             $response = $this->withSession(['user_id' => $adminId])
-                ->get('/api/index.php?resource=reports/' . $type);
+                ->get('/api/index.php?resource=reports/' . $type . '&status=pending');
 
             $response->assertOk()
                 ->assertHeader('Content-Type', 'text/csv; charset=UTF-8')

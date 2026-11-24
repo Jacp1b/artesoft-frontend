@@ -34,7 +34,7 @@ class ApiController extends Controller
                 'products' => $this->products($request, $method, $id),
                 'orders' => $this->orders($request, $method, $id),
                 'users' => $this->users($request, $method, $id),
-                'reports' => $this->reports($method, implode('/', array_slice($segments, 1)) ?: 'summary'),
+                'reports' => $this->reports($request, $method, implode('/', array_slice($segments, 1)) ?: 'summary'),
                 default => $this->respond(404, ['ok' => false, 'message' => 'Recurso no encontrado.']),
             };
         } catch (HttpResponseException $error) {
@@ -363,7 +363,7 @@ class ApiController extends Controller
         return $this->respond(405, ['ok' => false, 'message' => 'Método no permitido para cuentas.']);
     }
 
-    private function reports(string $method, string $type)
+    private function reports(Request $request, string $method, string $type)
     {
         $this->requireUser(['administrador', 'operador', 'consulta']);
         if ($method !== 'GET') {
@@ -379,7 +379,7 @@ class ApiController extends Controller
             default => null,
         };
         if ($normalizedCsvType !== null) {
-            return $this->csvReport($normalizedCsvType);
+            return $this->csvReport($normalizedCsvType, $this->reportFilters($request));
         }
         if (!in_array($type, ['pdf', 'orders', 'products'], true)) {
             return $this->respond(404, ['ok' => false, 'message' => 'Tipo de reporte no encontrado.']);
@@ -392,8 +392,10 @@ class ApiController extends Controller
         $pdf = new \Dompdf\Dompdf($options);
         $reportType = $type === 'pdf' ? 'summary' : $type;
         $report = $this->reportSummary();
+        $filters = $this->reportFilters($request);
+        $report['filtersLabel'] = $this->reportFiltersLabel($filters);
         if ($reportType === 'orders') {
-            $this->appendOrderReport($report);
+            $this->appendOrderReport($report, $filters);
         } elseif ($reportType === 'products') {
             $this->appendInventoryReport($report);
         }
@@ -416,14 +418,17 @@ class ApiController extends Controller
         ]);
     }
 
-    private function csvReport(string $reportType)
+    private function csvReport(string $reportType, array $filters = [])
     {
         $report = $this->reportSummary();
         $filename = 'artesoft-reporte-' . now()->format('Y-m-d') . '.csv';
+        $filtersLabel = $this->reportFiltersLabel($filters);
 
         if ($reportType === 'orders') {
-            $this->appendOrderReport($report);
+            $this->appendOrderReport($report, $filters);
             $rows = [
+                ['Filtros', $filtersLabel],
+                [],
                 ['Pedido', 'Tipo', 'Cliente', 'Correo', 'Telefono', 'Vendedor', 'Fecha', 'Subtotal', 'Envio', 'Total', 'Estado', 'Productos'],
             ];
             foreach ($report['ordersData'] as $order) {
@@ -465,6 +470,8 @@ class ApiController extends Controller
             $filename = 'artesoft-inventario-' . now()->format('Y-m-d') . '.csv';
         } else {
             $rows = [
+                ['Filtros', $filtersLabel],
+                [],
                 ['Indicador', 'Valor'],
                 ['Ventas registradas', $report['sales']],
                 ['Pedidos registrados', $report['orders']],
@@ -496,10 +503,77 @@ class ApiController extends Controller
         return $text;
     }
 
-    private function appendOrderReport(array &$report): void
+    private function reportFilters(Request $request): array
     {
-        $orders = DB::table('orders as o')
+        $status = trim((string) $request->query('status', ''));
+        $allowedStatuses = ['Pedido recibido', 'En preparación', 'Enviado', 'Entregado', 'pending'];
+        if (!in_array($status, $allowedStatuses, true)) {
+            $status = '';
+        }
+
+        $seller = trim((string) $request->query('seller', ''));
+        $from = trim((string) $request->query('from', ''));
+        $to = trim((string) $request->query('to', ''));
+        $datePattern = '/^\d{4}-\d{2}-\d{2}$/';
+        if (!preg_match($datePattern, $from)) {
+            $from = '';
+        }
+        if (!preg_match($datePattern, $to)) {
+            $to = '';
+        }
+
+        return [
+            'status' => $status,
+            'seller' => ctype_digit($seller) ? (int) $seller : null,
+            'from' => $from,
+            'to' => $to,
+        ];
+    }
+
+    private function reportFiltersLabel(array $filters): string
+    {
+        $labels = [];
+        if (($filters['status'] ?? '') === 'pending') {
+            $labels[] = 'Estado: pendientes';
+        } elseif (!empty($filters['status'])) {
+            $labels[] = 'Estado: ' . $filters['status'];
+        }
+        if (!empty($filters['seller'])) {
+            $sellerName = DB::table('users')->where('id', (int) $filters['seller'])->value('name');
+            if ($sellerName) {
+                $labels[] = 'Vendedor: ' . $sellerName;
+            }
+        }
+        if (!empty($filters['from'])) {
+            $labels[] = 'Desde: ' . $filters['from'];
+        }
+        if (!empty($filters['to'])) {
+            $labels[] = 'Hasta: ' . $filters['to'];
+        }
+        return $labels ? implode(' · ', $labels) : 'Sin filtros';
+    }
+
+    private function appendOrderReport(array &$report, array $filters = []): void
+    {
+        $query = DB::table('orders as o')
             ->leftJoin('users as seller', 'seller.id', '=', 'o.sold_by_user_id')
+            ->where('o.is_demo', 0);
+        $status = $filters['status'] ?? '';
+        if ($status === 'pending') {
+            $query->where('o.status', '<>', 'Entregado');
+        } elseif ($status !== '') {
+            $query->where('o.status', $status);
+        }
+        if (!empty($filters['seller'])) {
+            $query->where('o.sold_by_user_id', (int) $filters['seller']);
+        }
+        if (!empty($filters['from'])) {
+            $query->whereDate('o.created_at', '>=', $filters['from']);
+        }
+        if (!empty($filters['to'])) {
+            $query->whereDate('o.created_at', '<=', $filters['to']);
+        }
+        $orders = $query
             ->orderByDesc('o.created_at')
             ->orderByDesc('o.order_id')
             ->get([

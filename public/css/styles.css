@@ -281,6 +281,11 @@ main:focus { outline: 0; }
 .report-empty, .report-footnote { color: #858191; font-size: 9px; line-height: 1.6; }
 .report-footnote { margin: 8px 0 0; }
 .report-test-notice { margin: -4px 0 15px; padding: 11px 14px; border: 1px solid #f1d7a4; border-radius: 11px; background: #fff8e9; color: #76521c; font-size: 10px; line-height: 1.6; }
+.report-filter-panel { margin-bottom: 19px; }
+.report-filter-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 13px 0; }
+.report-filter-grid label { display: grid; gap: 5px; color: #777283; font-size: 9px; font-weight: 700; }
+.report-filter-grid select, .report-filter-grid input { width: 100%; min-height: 36px; padding: 0 9px; border: 1px solid #e7e3ed; border-radius: 8px; background: #fff; color: #3f3a50; font-size: 9px; }
+.report-filter-panel .admin-top-actions { flex-wrap: wrap; }
 .order-test-label, .order-type-label { display: inline-block; padding: 3px 6px; border-radius: 999px; background: #fff0cf; color: #825416; font-size: 8px; font-weight: 800; vertical-align: middle; }
 .order-type-label { background: #edf5db; color: #506819; }
 .admin-panel { min-width: 0; padding: 17px; border: 1px solid #ebe8f0; border-radius: 14px; background: #fff; }
@@ -528,6 +533,7 @@ main:focus { outline: 0; }
   .admin-mobile-nav .admin-nav-icon { width: auto; }
   .admin-heading { align-items: start; flex-direction: column; }
   .admin-heading h1 { font-size: 22px; }
+  .report-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .metric-grid { gap: 8px; }
   .metric-card { min-height: 84px; padding: 11px; }
   .metric-number { font-size: 19px; }

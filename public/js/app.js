@@ -1,5 +1,5 @@
 (function () {
-  const state = { page: "store", adminTab: "overview", orderEmail: "", lookupOrders: null };
+  const state = { page: "store", adminTab: "overview", orderEmail: "", lookupOrders: null, reportFilters: { status: "", seller: "", from: "", to: "" } };
   const tabs = [
     ["overview", "◫", "Resumen"], ["orders", "▣", "Pedidos"], ["inventory", "✳", "Inventario"], ["reports", "▤", "Reportes"], ["clients", "♡", "Clientes"], ["users", "♙", "Cuentas"]
   ];
@@ -16,7 +16,7 @@
     if (state.adminTab === "inventory") return window.Artesoft.InventarioView.renderInventory(products, role, window.Artesoft.InventarioController.getSearch());
     if (state.adminTab === "reports") {
       const response = window.Artesoft.Api.request("reports/summary");
-      return window.Artesoft.PedidoView.renderReports(response.ok ? response.data : null, response.message);
+      return window.Artesoft.PedidoView.renderReports(response.ok ? response.data : null, response.message, state.reportFilters);
     }
     if (state.adminTab === "clients") return window.Artesoft.PedidoView.renderClients(window.Artesoft.PedidoModel.customers());
     return window.Artesoft.PedidoView.renderDashboard(orders, products, role);
@@ -78,6 +78,12 @@
         if (!form.checkValidity()) return form.reportValidity();
         this.setOrderEmail(form.elements.email.value.trim());
         this.navigate("orders", { scroll: false });
+      });
+      document.addEventListener("change", (event) => {
+        const filter = event.target.closest("[data-report-filter]");
+        if (!filter) return;
+        state.reportFilters[filter.dataset.reportFilter] = filter.value;
+        this.renderAdmin();
       });
       document.addEventListener("keydown", (event) => {
         if (event.key === "/" && !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)) {
