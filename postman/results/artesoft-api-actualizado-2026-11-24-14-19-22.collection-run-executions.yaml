@@ -1,0 +1,627 @@
+kind: postman-cli-collection-run-executions
+schemaVersion: 1
+runId: 5e1e324a-2be5-4815-b658-041f5b29cbbf
+summaryFile: artesoft-api-actualizado-2026-11-24-14-19-22.collection-run-summary.yaml
+collection:
+  id: 9d50653840b87b794a688511
+  name: ArteSoft API (actualizado)
+generatedAt: '2026-11-24T19:19:22.473Z'
+---
+iteration: 0
+cursorRef: d3de2194-38b5-4fe6-94d5-e3453a1648ad
+protocol: http
+item:
+  id: 18e9163dd85d4c30bb07f8a6
+  name: 1. Consultar productos
+  folders: []
+  fullName: 1. Consultar productos
+  parent: null
+request:
+  method: GET
+  url: http://127.0.0.1:8000/api/index.php?resource=products
+  headers:
+  - key: Cache-Control
+    value: no-cache
+    system: true
+  - key: Postman-Token
+    value: fd3b5a73-4fb2-4180-909a-c9dae5685315
+    system: true
+  - key: Host
+    value: 127.0.0.1:8000
+    system: true
+  - key: User-Agent
+    value: PostmanRuntime/2.13.0
+    system: true
+  - key: Accept
+    value: '*/*'
+    system: true
+  - key: Accept-Encoding
+    value: gzip, deflate, br
+    system: true
+  - key: Connection
+    value: keep-alive
+    system: true
+  - key: Accept
+    value: application/json
+response:
+  id: null
+  code: 200
+  status: OK
+  responseTime: 151.32709999999997
+  responseSize: 3837
+  headers:
+  - key: Host
+    value: 127.0.0.1:8000
+  - key: Connection
+    value: close
+  - key: X-Powered-By
+    value: PHP/8.5.12
+  - key: Cache-Control
+    value: no-cache, private
+  - key: Date
+    value: Tue, 24 Nov 2026 19:19:22 GMT
+  - key: Content-Type
+    value: application/json
+  - key: Access-Control-Allow-Origin
+    value: '*'
+tests:
+- name: 200 · El catálogo contiene una lista de productos
+  status: passed
+errors: []
+---
+iteration: 0
+cursorRef: b5fbb831-3fd9-4174-a78c-d0fdd935eede
+protocol: http
+item:
+  id: 0906dbce904c13f0c812c8c8
+  name: 2. Obtener sesión
+  folders: []
+  fullName: 2. Obtener sesión
+  parent: null
+request:
+  method: GET
+  url: http://127.0.0.1:8000/api/index.php?resource=auth/me
+  headers:
+  - key: Cache-Control
+    value: no-cache
+    system: true
+  - key: Postman-Token
+    value: 8fc10420-9259-4cdc-9c60-4d16f0f775d4
+    system: true
+  - key: Host
+    value: 127.0.0.1:8000
+    system: true
+  - key: User-Agent
+    value: PostmanRuntime/2.13.0
+    system: true
+  - key: Accept
+    value: '*/*'
+    system: true
+  - key: Accept-Encoding
+    value: gzip, deflate, br
+    system: true
+  - key: Connection
+    value: keep-alive
+    system: true
+  - description:
+      type: text/plain
+    key: Accept
+    value: application/json
+response:
+  id: null
+  code: 200
+  status: OK
+  responseTime: 52.17059999999992
+  responseSize: 78
+  headers:
+  - key: Host
+    value: 127.0.0.1:8000
+  - key: Connection
+    value: close
+  - key: X-Powered-By
+    value: PHP/8.5.12
+  - key: Cache-Control
+    value: no-cache, private
+  - key: Date
+    value: Tue, 24 Nov 2026 19:19:23 GMT
+  - key: Content-Type
+    value: application/json
+  - key: Access-Control-Allow-Origin
+    value: '*'
+tests:
+- name: 200 · La sesión devuelve un token CSRF
+  status: passed
+errors: []
+---
+iteration: 0
+cursorRef: ee64ce80-1cf8-43fb-bbde-6db8c6b2960e
+protocol: http
+item:
+  id: 26c69825e7ac68df4e93e3de
+  name: 3. Iniciar sesión
+  folders: []
+  fullName: 3. Iniciar sesión
+  parent: null
+request:
+  method: POST
+  url: http://127.0.0.1:8000/api/index.php?resource=auth/login
+  headers:
+  - key: Cache-Control
+    value: no-cache
+    system: true
+  - key: Postman-Token
+    value: 67971023-51be-4ea0-a4b0-997d120413eb
+    system: true
+  - key: Content-Type
+    value: application/json
+    system: true
+  - key: Content-Length
+    value: '65'
+    system: true
+  - key: Host
+    value: 127.0.0.1:8000
+    system: true
+  - key: User-Agent
+    value: PostmanRuntime/2.13.0
+    system: true
+  - key: Accept
+    value: '*/*'
+    system: true
+  - key: Accept-Encoding
+    value: gzip, deflate, br
+    system: true
+  - key: Connection
+    value: keep-alive
+    system: true
+  - description:
+      type: text/plain
+    key: Accept
+    value: application/json
+  - description:
+      type: text/plain
+    key: Content-Type
+    value: application/json
+response:
+  id: null
+  code: 200
+  status: OK
+  responseTime: 325.7435999999998
+  responseSize: 280
+  headers:
+  - key: Host
+    value: 127.0.0.1:8000
+  - key: Connection
+    value: close
+  - key: X-Powered-By
+    value: PHP/8.5.12
+  - key: Cache-Control
+    value: no-cache, private
+  - key: Date
+    value: Tue, 24 Nov 2026 19:19:23 GMT
+  - key: Content-Type
+    value: application/json
+  - key: Access-Control-Allow-Origin
+    value: '*'
+tests:
+- name: 200 · El usuario inició sesión
+  status: passed
+errors: []
+---
+iteration: 0
+cursorRef: 68e007bc-305b-4ca4-92ba-5a3b0ae3f584
+protocol: http
+item:
+  id: 651a465c9e78b5c6293195b6
+  name: 4. Crear producto de prueba
+  folders: []
+  fullName: 4. Crear producto de prueba
+  parent: null
+request:
+  method: POST
+  url: http://127.0.0.1:8000/api/index.php?resource=products
+  headers:
+  - key: Cache-Control
+    value: no-cache
+    system: true
+  - key: Postman-Token
+    value: 9b27eba9-5c56-4fbf-8dff-8204480d5cee
+    system: true
+  - key: Content-Type
+    value: application/json
+    system: true
+  - key: Content-Length
+    value: '151'
+    system: true
+  - key: Host
+    value: 127.0.0.1:8000
+    system: true
+  - key: User-Agent
+    value: PostmanRuntime/2.13.0
+    system: true
+  - key: Accept
+    value: '*/*'
+    system: true
+  - key: Accept-Encoding
+    value: gzip, deflate, br
+    system: true
+  - key: Connection
+    value: keep-alive
+    system: true
+  - description:
+      type: text/plain
+    key: Accept
+    value: application/json
+  - description:
+      type: text/plain
+    key: Content-Type
+    value: application/json
+response:
+  id: null
+  code: 201
+  status: Created
+  responseTime: 65.0650999999998
+  responseSize: 273
+  headers:
+  - key: Host
+    value: 127.0.0.1:8000
+  - key: Connection
+    value: close
+  - key: X-Powered-By
+    value: PHP/8.5.12
+  - key: Cache-Control
+    value: no-cache, private
+  - key: Date
+    value: Tue, 24 Nov 2026 19:19:23 GMT
+  - key: Content-Type
+    value: application/json
+  - key: Access-Control-Allow-Origin
+    value: '*'
+tests:
+- name: 201 · Se creó el producto y se recibió su ID
+  status: passed
+errors: []
+---
+iteration: 0
+cursorRef: 5562b712-c9a7-41ae-b316-791946540e35
+protocol: http
+item:
+  id: f25b11aa107d42c5bddb7f14
+  name: 5. Editar producto de prueba
+  folders: []
+  fullName: 5. Editar producto de prueba
+  parent: null
+request:
+  method: PUT
+  url: http://127.0.0.1:8000/api/index.php?resource=products&id=p-f8a88bd323bc
+  headers:
+  - key: Cache-Control
+    value: no-cache
+    system: true
+  - key: Postman-Token
+    value: 57eb4f37-7dc7-42ca-8ed5-009d8807bc5e
+    system: true
+  - key: Content-Type
+    value: application/json
+    system: true
+  - key: Content-Length
+    value: '128'
+    system: true
+  - key: Host
+    value: 127.0.0.1:8000
+    system: true
+  - key: User-Agent
+    value: PostmanRuntime/2.13.0
+    system: true
+  - key: Accept
+    value: '*/*'
+    system: true
+  - key: Accept-Encoding
+    value: gzip, deflate, br
+    system: true
+  - key: Connection
+    value: keep-alive
+    system: true
+  - description:
+      type: text/plain
+    key: Accept
+    value: application/json
+  - description:
+      type: text/plain
+    key: Content-Type
+    value: application/json
+response:
+  id: null
+  code: 200
+  status: OK
+  responseTime: 66.4728
+  responseSize: 250
+  headers:
+  - key: Host
+    value: 127.0.0.1:8000
+  - key: Connection
+    value: close
+  - key: X-Powered-By
+    value: PHP/8.5.12
+  - key: Cache-Control
+    value: no-cache, private
+  - key: Date
+    value: Tue, 24 Nov 2026 19:19:23 GMT
+  - key: Content-Type
+    value: application/json
+  - key: Access-Control-Allow-Origin
+    value: '*'
+tests:
+- name: 200 · Se actualizaron el precio y las existencias del producto de prueba
+  status: passed
+errors: []
+---
+iteration: 0
+cursorRef: f2ed3128-35c8-4b33-bf66-c1d90ffce4a8
+protocol: http
+item:
+  id: 8d2058487ac53963933c766c
+  name: 6. Eliminar producto de prueba
+  folders: []
+  fullName: 6. Eliminar producto de prueba
+  parent: null
+request:
+  method: DELETE
+  url: http://127.0.0.1:8000/api/index.php?resource=products&id=p-f8a88bd323bc
+  headers:
+  - key: Cache-Control
+    value: no-cache
+    system: true
+  - key: Postman-Token
+    value: e503e783-6327-4c35-8358-005c0b1475ef
+    system: true
+  - key: Host
+    value: 127.0.0.1:8000
+    system: true
+  - key: User-Agent
+    value: PostmanRuntime/2.13.0
+    system: true
+  - key: Accept
+    value: '*/*'
+    system: true
+  - key: Accept-Encoding
+    value: gzip, deflate, br
+    system: true
+  - key: Connection
+    value: keep-alive
+    system: true
+  - description:
+      type: text/plain
+    key: Accept
+    value: application/json
+response:
+  id: null
+  code: 200
+  status: OK
+  responseTime: 69.10950000000003
+  responseSize: 11
+  headers:
+  - key: Host
+    value: 127.0.0.1:8000
+  - key: Connection
+    value: close
+  - key: X-Powered-By
+    value: PHP/8.5.12
+  - key: Cache-Control
+    value: no-cache, private
+  - key: Date
+    value: Tue, 24 Nov 2026 19:19:23 GMT
+  - key: Content-Type
+    value: application/json
+  - key: Access-Control-Allow-Origin
+    value: '*'
+tests:
+- name: 200 · Se eliminó el producto de prueba
+  status: passed
+errors: []
+---
+iteration: 0
+cursorRef: 78da968a-5e67-4e92-a0cb-7eee095eb2ba
+protocol: http
+item:
+  id: 009cc5b09e0488b0e55367ef
+  name: Reporte general
+  folders:
+  - Reportes CSV
+  fullName: Reportes CSV / Reporte general
+  parent:
+    id: 8e122518bc90c3c26e0532e4
+    name: Reportes CSV
+    folders:
+    - Reportes CSV
+request:
+  method: GET
+  url: http://127.0.0.1:8000/api/index.php?resource=reports/csv
+  headers:
+  - key: Cache-Control
+    value: no-cache
+    system: true
+  - key: Postman-Token
+    value: 60bb5a2b-22d1-4aeb-93d2-a30657349584
+    system: true
+  - key: Host
+    value: 127.0.0.1:8000
+    system: true
+  - key: User-Agent
+    value: PostmanRuntime/2.13.0
+    system: true
+  - key: Accept
+    value: '*/*'
+    system: true
+  - key: Accept-Encoding
+    value: gzip, deflate, br
+    system: true
+  - key: Connection
+    value: keep-alive
+    system: true
+  - key: Accept
+    value: text/csv
+response:
+  id: null
+  code: 200
+  status: OK
+  responseTime: 93.05750000000035
+  responseSize: 204
+  headers:
+  - key: Host
+    value: 127.0.0.1:8000
+  - key: Connection
+    value: close
+  - key: X-Powered-By
+    value: PHP/8.5.12
+  - key: Content-Type
+    value: text/csv; charset=UTF-8
+  - key: Content-Disposition
+    value: attachment; filename="artesoft-reporte-2026-11-24.csv"
+  - key: Cache-Control
+    value: no-store, private
+  - key: Date
+    value: Tue, 24 Nov 2026 19:19:23 GMT
+  - key: Access-Control-Allow-Origin
+    value: '*'
+tests:
+- name: 200 · El reporte se entrega como archivo CSV
+  status: passed
+errors: []
+---
+iteration: 0
+cursorRef: 99746a02-1ce7-49e8-bb96-d27b95e5aaf8
+protocol: http
+item:
+  id: 7e3eb406238af8a9c468afa1
+  name: Reporte de pedidos
+  folders:
+  - Reportes CSV
+  fullName: Reportes CSV / Reporte de pedidos
+  parent:
+    id: 8e122518bc90c3c26e0532e4
+    name: Reportes CSV
+    folders:
+    - Reportes CSV
+request:
+  method: GET
+  url: http://127.0.0.1:8000/api/index.php?resource=reports/orders/csv
+  headers:
+  - key: Cache-Control
+    value: no-cache
+    system: true
+  - key: Postman-Token
+    value: 82c96230-8cff-4c6b-b06d-6658f32731b6
+    system: true
+  - key: Host
+    value: 127.0.0.1:8000
+    system: true
+  - key: User-Agent
+    value: PostmanRuntime/2.13.0
+    system: true
+  - key: Accept
+    value: '*/*'
+    system: true
+  - key: Accept-Encoding
+    value: gzip, deflate, br
+    system: true
+  - key: Connection
+    value: keep-alive
+    system: true
+  - key: Accept
+    value: text/csv
+response:
+  id: null
+  code: 200
+  status: OK
+  responseTime: 76.31600000000026
+  responseSize: 2191
+  headers:
+  - key: Host
+    value: 127.0.0.1:8000
+  - key: Connection
+    value: close
+  - key: X-Powered-By
+    value: PHP/8.5.12
+  - key: Content-Type
+    value: text/csv; charset=UTF-8
+  - key: Content-Disposition
+    value: attachment; filename="artesoft-pedidos-2026-11-24.csv"
+  - key: Cache-Control
+    value: no-store, private
+  - key: Date
+    value: Tue, 24 Nov 2026 19:19:24 GMT
+  - key: Access-Control-Allow-Origin
+    value: '*'
+tests:
+- name: 200 · El reporte se entrega como archivo CSV
+  status: passed
+errors: []
+---
+iteration: 0
+cursorRef: cebc17e9-99d1-4ee6-b27f-2e7cf353e237
+protocol: http
+item:
+  id: e1211cd0cd1c529afb7521a9
+  name: Reporte de inventario
+  folders:
+  - Reportes CSV
+  fullName: Reportes CSV / Reporte de inventario
+  parent:
+    id: 8e122518bc90c3c26e0532e4
+    name: Reportes CSV
+    folders:
+    - Reportes CSV
+request:
+  method: GET
+  url: http://127.0.0.1:8000/api/index.php?resource=reports/products/csv
+  headers:
+  - key: Cache-Control
+    value: no-cache
+    system: true
+  - key: Postman-Token
+    value: b462d83e-d920-475b-82ab-1ec24c1df1f9
+    system: true
+  - key: Host
+    value: 127.0.0.1:8000
+    system: true
+  - key: User-Agent
+    value: PostmanRuntime/2.13.0
+    system: true
+  - key: Accept
+    value: '*/*'
+    system: true
+  - key: Accept-Encoding
+    value: gzip, deflate, br
+    system: true
+  - key: Connection
+    value: keep-alive
+    system: true
+  - key: Accept
+    value: text/csv
+response:
+  id: null
+  code: 200
+  status: OK
+  responseTime: 76.15819999999985
+  responseSize: 868
+  headers:
+  - key: Host
+    value: 127.0.0.1:8000
+  - key: Connection
+    value: close
+  - key: X-Powered-By
+    value: PHP/8.5.12
+  - key: Content-Type
+    value: text/csv; charset=UTF-8
+  - key: Content-Disposition
+    value: attachment; filename="artesoft-inventario-2026-11-24.csv"
+  - key: Cache-Control
+    value: no-store, private
+  - key: Date
+    value: Tue, 24 Nov 2026 19:19:24 GMT
+  - key: Access-Control-Allow-Origin
+    value: '*'
+tests:
+- name: 200 · El reporte se entrega como archivo CSV
+  status: passed
+errors: []

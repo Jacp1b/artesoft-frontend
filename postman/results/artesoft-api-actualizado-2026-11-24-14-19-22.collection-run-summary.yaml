@@ -1,0 +1,67 @@
+kind: postman-cli-collection-run-summary
+schemaVersion: 1
+runId: 5e1e324a-2be5-4815-b658-041f5b29cbbf
+state: completed
+generatedAt: '2026-11-24T19:19:24.210Z'
+files:
+  summary: artesoft-api-actualizado-2026-11-24-14-19-22.collection-run-summary.yaml
+  executions: artesoft-api-actualizado-2026-11-24-14-19-22.collection-run-executions.yaml
+meta:
+  collection:
+    id: 9d50653840b87b794a688511
+    name: ArteSoft API (actualizado)
+    description: null
+  environment:
+    id: 35a2eae4-63da-44ef-b254-6918a60af62f
+    name: null
+  started: '2026-11-24T19:19:22.560Z'
+  completed: '2026-11-24T19:19:24.210Z'
+  durationMs: 1650
+environment:
+  cli:
+    version: 1.93.0
+    userAgent: Postman CLI/1.93.0
+    agent: github_copilot_vscode_agent
+  system:
+    os:
+      type: Windows_NT
+      platform: win32
+      arch: x64
+      release: 10.0.19045
+    hardware:
+      cpus: 8
+      totalMemory: 16027099136
+  isCI: false
+  ci: null
+  git:
+    branch: main
+    commit: 1fff8a95273bab214a1a9a44c8f66a1cb5d7b28f
+    commitShort: 1fff8a9
+    remoteUrl: https://github.com/Jacp1b/artesoft-frontend.git
+    dirty: false
+stats:
+  iterations:
+    executed: 1
+    errors: 0
+  executedRequests:
+    executed: 9
+    errors: 0
+  prerequestScripts:
+    executed: 5
+    errors: 0
+  postresponseScripts:
+    executed: 9
+    errors: 0
+  tests:
+    executed: 9
+    failed: 0
+  timeStats:
+    responseAverage: 108.38004444444444
+    responseMin: 52.17059999999992
+    responseMax: 325.7435999999998
+    responseStandardDeviation: 81.46340302607746
+transfers:
+  responseTotal: 7992
+failures: []
+executionsRecorded: 9
+simulation: null
