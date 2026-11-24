@@ -1,5 +1,5 @@
 # ARTESOFT · Tienda web con Laravel
-
+ELABORADO POR: JOHN CONDE - CAMILO TOLEDO - JOSE CASTRO - TOMAS DURAN
 Aplicación para Arte Didáctica S.A.S. Usa Laravel para el backend y la API REST, MySQL para usuarios, productos y pedidos, y conserva la interfaz JavaScript/CSS existente.
 
 ## Instalación

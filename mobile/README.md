@@ -11,11 +11,18 @@ Aplicacion Android en Kotlin para consultar pedidos de la API ARTESOFT.
 
 ## Configurar la URL
 
-Configura `artesoftApiBaseUrl` en `gradle.properties`:
+Configura `artesoftApiBaseUrl` en `gradle.properties`. El valor predeterminado
+apunta desde el emulador a una API iniciada desde la raíz del proyecto con
+`php artisan serve`:
+
+- Emulador Android con `php artisan serve` en el puerto 8000:
+  `http://10.0.2.2:8000/`
 
 - Emulador Android apuntando a XAMPP local:
   `http://10.0.2.2/artesoft-frontend/`
-- Dispositivo fisico en la misma red:
+- Dispositivo físico en la misma red, con `php artisan serve --host=0.0.0.0`:
+  `http://IP_DE_TU_PC:8000/`
+- Dispositivo físico en la misma red, con XAMPP:
   `http://IP_DE_TU_PC/artesoft-frontend/`
 - Servidor HTTPS publico:
   `https://tu-dominio.com/`

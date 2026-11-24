@@ -4,7 +4,7 @@ plugins {
 }
 
 val apiBaseUrl = providers.gradleProperty("artesoftApiBaseUrl")
-    .getOrElse("http://10.0.2.2/artesoft-frontend/")
+    .getOrElse("http://10.0.2.2:8000/")
 
 android {
     namespace = "com.artesoft.mobile"
@@ -43,6 +43,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:okhttp-urlconnection:4.12.0")
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
 }
