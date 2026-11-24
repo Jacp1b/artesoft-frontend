@@ -1,0 +1,45 @@
+$kind: http-request
+description: En **Variables** de esta colección, rellena los valores locales de `correoAdmin` y `claveAdmin` con los de tu cuenta de prueba de ArteSoft. La solicitud envía ambos campos como JSON y guarda el token de la nueva sesión. El rol `administrador` permite completar las cuatro operaciones.
+url: "{{baseUrl}}/api/index.php?resource=auth/login"
+method: POST
+headers:
+  Accept: application/json
+  X-CSRF-Token: "{{tokenArteSoft}}"
+  Content-Type: application/json
+queryParams:
+  resource: auth/login
+body:
+  type: json
+  content: "{{datosLogin}}"
+scripts:
+  - type: beforeRequest
+    code: |-
+      const token = pm.collectionVariables.get("tokenArteSoft");
+      if (!token) {
+          console.warn("Primero envía 2. Obtener sesión y después 3. Iniciar sesión.");
+          pm.execution.skipRequest();
+      } else {
+          pm.variables.set("tokenArteSoft", token);
+      }
+
+      const correo = pm.collectionVariables.get("correoAdmin");
+      const clave = pm.collectionVariables.get("claveAdmin");
+      if (!correo || !clave) {
+          console.warn("Completa correoAdmin y claveAdmin en los valores locales de la colección.");
+          pm.execution.skipRequest();
+      } else {
+          pm.variables.set("datosLogin", JSON.stringify({ email: correo, password: clave }));
+      }
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("200 · El usuario inició sesión", function () {
+          pm.response.to.have.status(200);
+          const datos = pm.response.json();
+          pm.expect(datos.ok).to.equal(true);
+          pm.expect(datos.user).to.be.an("object");
+          pm.expect(datos.csrfToken).to.be.a("string").and.not.empty;
+          pm.collectionVariables.set("tokenArteSoft", datos.csrfToken);
+      });
+    language: text/javascript
+order: 4000

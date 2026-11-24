@@ -1,0 +1,40 @@
+$kind: http-request
+description: Elimina el producto que creó el paso 4 en esta instalación. Requiere el rol `administrador`. Se espera 200 y `ok` igual a `true`. El ID se borra de las variables al confirmar la operación.
+url: "{{baseUrl}}/api/index.php?resource=products&id={{idProductoPrueba}}"
+method: DELETE
+headers:
+  Accept: application/json
+  X-CSRF-Token: "{{tokenArteSoft}}"
+queryParams:
+  resource: products
+  id: "{{idProductoPrueba}}"
+scripts:
+  - type: beforeRequest
+    code: |-
+      const token = pm.collectionVariables.get("tokenArteSoft");
+      if (!token) {
+          console.warn("Primero envía 2. Obtener sesión y después 3. Iniciar sesión.");
+          pm.execution.skipRequest();
+      } else {
+          pm.variables.set("tokenArteSoft", token);
+      }
+
+      const id = pm.collectionVariables.get("idProductoPrueba");
+      const mismaBase = pm.collectionVariables.get("baseProductoPrueba") === pm.variables.get("baseUrl");
+      if (!id || !mismaBase) {
+          console.warn("Envía primero 4. Crear producto de prueba en esta misma instalación.");
+          pm.execution.skipRequest();
+      } else {
+          pm.variables.set("idProductoPrueba", id);
+      }
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("200 · Se eliminó el producto de prueba", function () {
+          pm.response.to.have.status(200);
+          pm.expect(pm.response.json().ok).to.equal(true);
+          pm.collectionVariables.unset("idProductoPrueba");
+          pm.collectionVariables.unset("baseProductoPrueba");
+      });
+    language: text/javascript
+order: 7000

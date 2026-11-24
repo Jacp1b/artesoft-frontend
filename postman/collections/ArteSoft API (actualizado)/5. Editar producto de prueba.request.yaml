@@ -1,0 +1,52 @@
+$kind: http-request
+description: Edita el producto creado en el paso 4. Envía de nuevo los cuatro campos obligatorios. Se espera 200, el mismo ID, precio de 18000 y existencias de 7.
+url: "{{baseUrl}}/api/index.php?resource=products&id={{idProductoPrueba}}"
+method: PUT
+headers:
+  Accept: application/json
+  X-CSRF-Token: "{{tokenArteSoft}}"
+  Content-Type: application/json
+queryParams:
+  resource: products
+  id: "{{idProductoPrueba}}"
+body:
+  type: json
+  content: |-
+    {
+      "name": "Figuras geométricas editadas {{idProductoPrueba}}",
+      "category": "Juegos didácticos",
+      "price": 18000,
+      "stock": 7
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      const token = pm.collectionVariables.get("tokenArteSoft");
+      if (!token) {
+          console.warn("Primero envía 2. Obtener sesión y después 3. Iniciar sesión.");
+          pm.execution.skipRequest();
+      } else {
+          pm.variables.set("tokenArteSoft", token);
+      }
+
+      const id = pm.collectionVariables.get("idProductoPrueba");
+      const mismaBase = pm.collectionVariables.get("baseProductoPrueba") === pm.variables.get("baseUrl");
+      if (!id || !mismaBase) {
+          console.warn("Envía primero 4. Crear producto de prueba en esta misma instalación.");
+          pm.execution.skipRequest();
+      } else {
+          pm.variables.set("idProductoPrueba", id);
+      }
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("200 · Se actualizaron el precio y las existencias del producto de prueba", function () {
+          pm.response.to.have.status(200);
+          const datos = pm.response.json();
+          pm.expect(datos.ok).to.equal(true);
+          pm.expect(datos.data.id).to.equal(pm.collectionVariables.get("idProductoPrueba"));
+          pm.expect(datos.data.price).to.equal(18000);
+          pm.expect(datos.data.stock).to.equal(7);
+      });
+    language: text/javascript
+order: 6000

@@ -1,0 +1,23 @@
+$kind: http-request
+description: Abre la sesión de Laravel y guarda el token CSRF para el inicio de sesión. Postman conserva las cookies para las solicitudes siguientes al mismo servidor.
+url: "{{baseUrl}}/api/index.php?resource=auth/me"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  resource: auth/me
+scripts:
+  - type: beforeRequest
+    code: pm.collectionVariables.unset("tokenArteSoft");
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("200 · La sesión devuelve un token CSRF", function () {
+          pm.response.to.have.status(200);
+          const datos = pm.response.json();
+          pm.expect(datos.ok).to.equal(true);
+          pm.expect(datos.csrfToken).to.be.a("string").and.not.empty;
+          pm.collectionVariables.set("tokenArteSoft", datos.csrfToken);
+      });
+    language: text/javascript
+order: 3000

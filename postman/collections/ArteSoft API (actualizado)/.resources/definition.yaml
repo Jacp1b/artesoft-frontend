@@ -1,0 +1,13 @@
+$kind: collection
+description: |-
+  Pruebas de la API de la tienda ArteSoft del cuarto trimestre. Versión del proyecto del 20 de noviembre de 2026.
+
+  1. Inicia ArteSoft en tu computador y ajusta `baseUrl` si el servidor usa otro puerto.
+  2. Envía **1. Consultar productos**. El catálogo es público.
+  3. En **Variables** de la colección, escribe `correoAdmin` y `claveAdmin` en sus valores locales. Usa una cuenta de prueba con rol `administrador`.
+  4. Envía las solicitudes 2 a 6 en orden para iniciar sesión y crear, editar y eliminar un producto de muestra. La colección guarda el token CSRF y el ID del producto. Usa el mismo servidor y conserva activadas las cookies de Postman.
+  5. La carpeta **Reportes CSV** incluye las descargas del informe general, pedidos e inventario.
+variables:
+  baseUrl: http://127.0.0.1:8000
+  correoAdmin: ""
+  claveAdmin: ""

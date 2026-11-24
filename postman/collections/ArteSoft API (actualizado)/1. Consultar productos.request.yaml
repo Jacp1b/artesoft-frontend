@@ -1,0 +1,19 @@
+$kind: http-request
+description: Consulta el catálogo público. Se espera 200 y una lista en el campo `data`. Una lista vacía también es válida.
+url: "{{baseUrl}}/api/index.php?resource=products"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  resource: products
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("200 · El catálogo contiene una lista de productos", function () {
+          pm.response.to.have.status(200);
+          const datos = pm.response.json();
+          pm.expect(datos.ok).to.equal(true);
+          pm.expect(datos.data).to.be.an("array");
+      });
+    language: text/javascript
+order: 2000

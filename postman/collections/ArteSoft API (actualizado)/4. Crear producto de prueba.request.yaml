@@ -1,0 +1,46 @@
+$kind: http-request
+description: Crea un producto de muestra con un nombre diferente en cada envío. Se espera 201. La colección toma el identificador de `data.id` y lo usa en las solicitudes 5 y 6.
+url: "{{baseUrl}}/api/index.php?resource=products"
+method: POST
+headers:
+  Accept: application/json
+  X-CSRF-Token: "{{tokenArteSoft}}"
+  Content-Type: application/json
+queryParams:
+  resource: products
+body:
+  type: json
+  content: |-
+    {
+      "name": "Figuras geométricas de prueba {{$guid}}",
+      "category": "Juegos didácticos",
+      "price": 15000,
+      "stock": 5
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      const token = pm.collectionVariables.get("tokenArteSoft");
+      if (!token) {
+          console.warn("Primero envía 2. Obtener sesión y después 3. Iniciar sesión.");
+          pm.execution.skipRequest();
+      } else {
+          pm.variables.set("tokenArteSoft", token);
+      }
+
+      pm.collectionVariables.unset("idProductoPrueba");
+      pm.collectionVariables.unset("baseProductoPrueba");
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("201 · Se creó el producto y se recibió su ID", function () {
+          pm.response.to.have.status(201);
+          const datos = pm.response.json();
+          pm.expect(datos.ok).to.equal(true);
+          pm.expect(datos.data.id).to.be.a("string").and.not.empty;
+          pm.collectionVariables.set("idProductoPrueba", datos.data.id);
+          pm.collectionVariables.set("baseProductoPrueba", pm.variables.get("baseUrl"));
+          pm.expect(datos.data.stock).to.equal(5);
+      });
+    language: text/javascript
+order: 5000

@@ -1,0 +1,18 @@
+$kind: http-request
+description: Ejecuta esta solicitud después de iniciar sesión con un perfil del equipo. Se espera un archivo CSV con codificación UTF-8.
+url: "{{baseUrl}}/api/index.php?resource=reports/orders/csv"
+method: GET
+headers:
+  Accept: text/csv
+queryParams:
+  resource: reports/orders/csv
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("200 · El reporte se entrega como archivo CSV", function () {
+          pm.response.to.have.status(200);
+          pm.expect(pm.response.headers.get("Content-Type")).to.match(/^text\/csv\b/i);
+          pm.expect(pm.response.headers.get("Content-Disposition")).to.match(/attachment.*\.csv/i);
+      });
+    language: text/javascript
+order: 2000
