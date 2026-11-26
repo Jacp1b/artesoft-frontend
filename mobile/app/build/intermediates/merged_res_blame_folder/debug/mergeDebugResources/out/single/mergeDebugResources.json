@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "com.artesoft.mobile.app-debug-35:/layout_activity_main.xml.flat",
+        "source": "com.artesoft.mobile.app-main-37:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.artesoft.mobile.app-debug-35:/layout_item_order.xml.flat",
+        "source": "com.artesoft.mobile.app-main-37:/layout/item_order.xml"
+    }
+]

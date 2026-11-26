@@ -1,0 +1,23 @@
+R_DEF: Internal format may change without notice
+local
+id emailInput
+id errorText
+id loginButton
+id loginGroup
+id orderCustomer
+id orderDate
+id orderId
+id orderItems
+id orderStatus
+id orderTotal
+id ordersCount
+id ordersEmpty
+id ordersGroup
+id ordersList
+id passwordInput
+id progress
+id refreshButton
+id userName
+layout activity_main
+layout item_order
+style Theme.Artesoft
