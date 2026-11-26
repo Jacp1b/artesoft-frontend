@@ -45,9 +45,14 @@
       document.getElementById("customerAuthForm")?.addEventListener("submit", (event) => {
         event.preventDefault();
         const form = event.currentTarget;
+        const mode = form.dataset.authMode;
+        if (mode === "register") {
+          const address = form.elements.address;
+          const validStreetType = /\b(?:calle|carrera|transversal|diagonal|avenida|autopista|v[ií]a|circular|cl|cra|trans|tv|diag|av|ak|ac)\b/i.test(address.value.trim());
+          address.setCustomValidity(validStreetType ? "" : "La dirección debe incluir el tipo de vía, por ejemplo Calle, Carrera, Transversal o Diagonal.");
+        }
         if (!form.checkValidity()) return form.reportValidity();
         const data = Object.fromEntries(new FormData(form).entries());
-        const mode = form.dataset.authMode;
         let result;
         if (mode === "register") {
           result = window.Artesoft.AuthModel.registerCustomer({

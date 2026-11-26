@@ -35,6 +35,7 @@ class StoreController extends Controller
                     'artesoft:v3:pedidos' => [],
                 ],
                 'csrfToken' => csrf_token(),
+                'deliveryCities' => config('storefront.delivery_cities'),
             ])
             ->header('Cache-Control', 'no-store');
     }

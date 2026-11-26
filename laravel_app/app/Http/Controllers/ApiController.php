@@ -81,7 +81,10 @@ class ApiController extends Controller
         }
 
         if ($method === 'POST' && $action === 'register') {
-            $data = $this->validateUser($this->input($request), true);
+            $input = $this->input($request);
+            $input['role'] = 'cliente';
+            $data = $this->validateUser($input, true);
+            $this->validateCustomerRegistration($data);
             $id = $this->insertUser($data, 'cliente');
             $request->session()->regenerate();
             $request->session()->put('user_id', $id);
@@ -931,6 +934,22 @@ class ApiController extends Controller
             $this->respond(422, ['ok' => false, 'message' => 'Completa un celular, ciudad y dirección de entrega válidos.']);
         }
         return compact('name', 'email', 'password', 'role', 'phone', 'city', 'address');
+    }
+
+    private function validateCustomerRegistration(array $data): void
+    {
+        if (!preg_match('/^[\p{L}\p{M} ]{3,90}$/u', $data['name'])) {
+            $this->respond(422, ['ok' => false, 'message' => 'El nombre solo puede contener letras y espacios.']);
+        }
+        if (!preg_match('/^3[0-9]{9}$/', $data['phone'])) {
+            $this->respond(422, ['ok' => false, 'message' => 'El celular debe tener 10 dígitos, comenzar por 3 y no incluir +57.']);
+        }
+        if (!in_array($data['city'], config('storefront.delivery_cities', []), true)) {
+            $this->respond(422, ['ok' => false, 'message' => 'Selecciona una ciudad válida de la lista.']);
+        }
+        if (!preg_match('/\b(?:calle|carrera|transversal|diagonal|avenida|autopista|v[ií]a|circular|cl|cra|trans|tv|diag|av|ak|ac)\b/ui', $data['address'])) {
+            $this->respond(422, ['ok' => false, 'message' => 'La dirección debe incluir el tipo de vía, por ejemplo Calle, Carrera, Transversal o Diagonal.']);
+        }
     }
 
     private function insertUser(array $data, string $role): int

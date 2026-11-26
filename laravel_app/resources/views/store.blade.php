@@ -94,17 +94,22 @@
     <form id="customerAuthForm" class="form-stack">
       <div class="customer-name-field" hidden>
         <label for="customerAuthName">Nombre completo</label>
-        <input id="customerAuthName" name="name" type="text" autocomplete="name" minlength="3" maxlength="90">
+        <input id="customerAuthName" name="name" type="text" autocomplete="name" minlength="3" maxlength="90" pattern="[\p{L}\p{M} ]{3,90}" title="Usa solo letras y espacios.">
       </div>
       <label for="customerAuthEmail">Correo electrónico</label>
       <input id="customerAuthEmail" name="email" type="email" autocomplete="email" maxlength="120" required>
       <div class="customer-registration-fields" hidden>
         <label for="customerAuthPhone">Celular</label>
-        <input id="customerAuthPhone" name="phone" type="tel" autocomplete="tel" minlength="7" maxlength="20" pattern="[0-9+\(\) .\-]{7,20}">
+        <input id="customerAuthPhone" name="phone" type="tel" autocomplete="tel" inputmode="numeric" minlength="10" maxlength="10" pattern="3[0-9]{9}" title="Escribe 10 dígitos, empezando por 3 y sin +57." placeholder="3XXXXXXXXX">
         <label for="customerAuthCity">Ciudad o municipio</label>
-        <input id="customerAuthCity" name="city" autocomplete="address-level2" minlength="2" maxlength="60">
+        <select id="customerAuthCity" name="city" autocomplete="address-level2" required>
+          <option value="">Selecciona tu ciudad o municipio</option>
+          @foreach ($deliveryCities as $city)
+            <option value="{{ $city }}">{{ $city }}</option>
+          @endforeach
+        </select>
         <label for="customerAuthAddress">Dirección de entrega</label>
-        <input id="customerAuthAddress" name="address" autocomplete="street-address" minlength="5" maxlength="120">
+        <input id="customerAuthAddress" name="address" autocomplete="street-address" minlength="5" maxlength="120" placeholder="Calle 10 # 5-20">
       </div>
       <label for="customerAuthPassword">Contraseña</label>
       <input id="customerAuthPassword" name="password" type="password" autocomplete="current-password" minlength="8" maxlength="128" required>

@@ -44,6 +44,52 @@ class StorefrontApiTest extends TestCase
             ->assertJsonPath('ok', false);
     }
 
+    public function test_customer_registration_rejects_invalid_name_phone_city_and_address(): void
+    {
+        $csrfToken = $this->get('/api/index.php?resource=auth/me')->json('csrfToken');
+        $validData = [
+            'name' => 'María Pérez',
+            'email' => 'customer@example.com',
+            'password' => 'StrongPass123!',
+            'phone' => '3001234567',
+            'city' => 'Bogotá D.C.',
+            'address' => 'Calle 10 # 5-20',
+        ];
+        $invalidCases = [
+            ['name' => 'María Pérez2'],
+            ['phone' => '+573001234567'],
+            ['city' => 'Medellín'],
+            ['address' => 'Apto 201, edificio Central'],
+        ];
+
+        foreach ($invalidCases as $index => $invalidFields) {
+            $this->withHeader('X-CSRF-Token', $csrfToken)
+                ->postJson('/api/index.php?resource=auth/register', array_merge($validData, [
+                    'email' => 'customer' . $index . '@example.com',
+                ], $invalidFields))
+                ->assertUnprocessable()
+                ->assertJsonPath('ok', false);
+        }
+    }
+
+    public function test_customer_registration_accepts_colombian_mobile_and_valid_street_address(): void
+    {
+        $csrfToken = $this->get('/api/index.php?resource=auth/me')->json('csrfToken');
+
+        $this->withHeader('X-CSRF-Token', $csrfToken)
+            ->postJson('/api/index.php?resource=auth/register', [
+                'name' => 'María Pérez',
+                'email' => 'customer@example.com',
+                'password' => 'StrongPass123!',
+                'phone' => '3001234567',
+                'city' => 'Bogotá D.C.',
+                'address' => 'Cra 15 # 10-20',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('user.phone', '3001234567');
+    }
+
     public function test_all_pdf_reports_render_when_the_database_is_empty(): void
     {
         $userId = DB::table('users')->insertGetId([

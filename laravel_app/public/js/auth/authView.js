@@ -26,7 +26,10 @@
       nameInput.required = isRegister;
       nameInput.autocomplete = isRegister ? "name" : "off";
       registrationFields.hidden = !isRegister;
-      registrationFields.querySelectorAll("input").forEach((input) => { input.required = isRegister; });
+      registrationFields.querySelectorAll("input, select").forEach((input) => {
+        input.required = isRegister;
+        input.setCustomValidity("");
+      });
       passwordInput.autocomplete = isRegister ? "new-password" : "current-password";
       form.dataset.authMode = isRegister ? "register" : "login";
       document.querySelectorAll("[data-action='customer-auth-mode']").forEach((button) => {
