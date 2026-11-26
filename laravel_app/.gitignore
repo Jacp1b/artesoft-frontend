@@ -17,3 +17,4 @@
 /public/hot
 /mobile/.gradle/
 /mobile/**/build/
+/mobile/local.properties
