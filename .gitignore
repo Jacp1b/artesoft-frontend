@@ -15,3 +15,5 @@
 !/storage/logs/.gitignore
 /public/build/
 /public/hot
+/mobile/.gradle/
+/mobile/**/build/
